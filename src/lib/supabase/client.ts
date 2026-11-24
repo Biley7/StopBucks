@@ -12,16 +12,12 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function createClient(): SupabaseClient | null {
-  if (!isSupabaseConfigured()) {
+  if (typeof window === "undefined") {
     return null;
   }
 
-  if (typeof window === "undefined") {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const key =
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    return createBrowserClient(url, key);
+  if (!isSupabaseConfigured()) {
+    return null;
   }
 
   if (!clientInstance) {

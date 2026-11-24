@@ -50,7 +50,9 @@ export function createInitialGuestState(referenceDate: Date = new Date()): Guest
   const relIso = (daysAgo: number, hourOfDay: number, minute: number = 0): string => {
     const d = new Date(now - daysAgo * DAY_MS);
     d.setUTCHours(hourOfDay, minute, 0, 0);
-    return d.toISOString();
+    // For "today", a fixed display hour may still be later than the supplied
+    // reference instant. Clamp it so seed data never becomes future spending.
+    return new Date(Math.min(d.getTime(), now)).toISOString();
   };
 
   // 30 days of realistic student transactions

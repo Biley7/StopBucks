@@ -3,10 +3,11 @@
  *
  * Implements IStopBucksRepository using the Supabase client.
  * Enforces ownership via Supabase Row-Level Security (auth.uid() = user_id).
- * Never swallows database errors; propagates meaningful typed errors.
+ * Never swallows database errors; sanitizes thrown errors into user-safe messages.
  * Never accesses service-role credentials.
  */
 
+import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   CreateProfileInput,
@@ -19,58 +20,149 @@ import type {
   UpdateTransactionInput,
   UserProfile,
   VaultItem,
+  VaultPurchaseResult,
   WeeklyNudge,
 } from "@/domain/types";
+import {
+  currencySchema,
+  paymentModeSchema,
+  triggerTagSchema,
+  vaultStatusSchema,
+} from "@/lib/schemas";
 import type { IStopBucksRepository } from "./repository.interface";
 
-interface DbProfile {
-  user_id: string;
-  currency: string;
-  monthly_budget_minor: number;
-  self_invest_target_minor: number;
-  hourly_rate_minor: number;
-  created_at: string;
+// Row schemas for runtime database validation
+const dbProfileRowSchema = z.object({
+  user_id: z.string().min(1),
+  currency: currencySchema,
+  monthly_budget_minor: z.coerce.number().int().nonnegative(),
+  self_invest_target_minor: z.coerce.number().int().nonnegative(),
+  hourly_rate_minor: z.coerce.number().int().positive(),
+  created_at: z.string().min(1),
+});
+
+const dbTransactionRowSchema = z.object({
+  id: z.string().min(1),
+  user_id: z.string().min(1),
+  amount_minor: z.coerce.number().int().positive(),
+  note: z.string().default(""),
+  trigger_tag: triggerTagSchema,
+  payment_mode: paymentModeSchema,
+  logged_at: z.string().min(1),
+  created_at: z.string().min(1),
+});
+
+const dbVaultItemRowSchema = z.object({
+  id: z.string().min(1),
+  user_id: z.string().min(1),
+  item_name: z.string().min(1),
+  price_minor: z.coerce.number().int().positive(),
+  trigger_tag: triggerTagSchema,
+  unlock_at: z.string().min(1),
+  status: vaultStatusSchema,
+  resolved_at: z.string().nullable().optional(),
+  created_at: z.string().min(1),
+});
+
+const dbWeeklyNudgeRowSchema = z.object({
+  id: z.string().min(1),
+  user_id: z.string().min(1),
+  week_key: z.string().min(1),
+  bias_snapshot: z.record(z.unknown()),
+  coach_response: z.record(z.unknown()),
+  created_at: z.string().min(1),
+});
+
+export function mapProfileRow(raw: unknown): UserProfile {
+  const parsed = dbProfileRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid profile row data:", parsed.error);
+    throw new Error("Invalid profile data received from database.");
+  }
+  return {
+    userId: parsed.data.user_id,
+    currency: parsed.data.currency,
+    monthlyBudgetMinor: parsed.data.monthly_budget_minor,
+    selfInvestTargetMinor: parsed.data.self_invest_target_minor,
+    hourlyRateMinor: parsed.data.hourly_rate_minor,
+    createdAt: parsed.data.created_at,
+  };
 }
 
-interface DbTransaction {
-  id: string;
-  user_id: string;
-  amount_minor: number;
-  note: string;
-  trigger_tag: string;
-  payment_mode: string;
-  logged_at: string;
-  created_at: string;
+export function mapTransactionRow(raw: unknown): Transaction {
+  const parsed = dbTransactionRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid transaction row data:", parsed.error);
+    throw new Error("Invalid transaction data received from database.");
+  }
+  return {
+    id: parsed.data.id,
+    userId: parsed.data.user_id,
+    amountMinor: parsed.data.amount_minor,
+    note: parsed.data.note,
+    triggerTag: parsed.data.trigger_tag,
+    paymentMode: parsed.data.payment_mode,
+    loggedAt: parsed.data.logged_at,
+    createdAt: parsed.data.created_at,
+  };
 }
 
-interface DbVaultItem {
-  id: string;
-  user_id: string;
-  item_name: string;
-  price_minor: number;
-  trigger_tag: string;
-  unlock_at: string;
-  status: string;
-  resolved_at: string | null;
-  created_at: string;
+export function mapVaultItemRow(raw: unknown): VaultItem {
+  const parsed = dbVaultItemRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid vault item row data:", parsed.error);
+    throw new Error("Invalid vault item data received from database.");
+  }
+  return {
+    id: parsed.data.id,
+    userId: parsed.data.user_id,
+    itemName: parsed.data.item_name,
+    priceMinor: parsed.data.price_minor,
+    triggerTag: parsed.data.trigger_tag,
+    unlockAt: parsed.data.unlock_at,
+    status: parsed.data.status,
+    resolvedAt: parsed.data.resolved_at ?? null,
+    createdAt: parsed.data.created_at,
+  };
 }
 
-interface DbWeeklyNudge {
-  id: string;
-  user_id: string;
-  week_key: string;
-  bias_snapshot: Record<string, unknown>;
-  coach_response: Record<string, unknown>;
-  created_at: string;
+export function mapWeeklyNudgeRow(raw: unknown): WeeklyNudge {
+  const parsed = dbWeeklyNudgeRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid weekly nudge row data:", parsed.error);
+    throw new Error("Invalid weekly nudge data received from database.");
+  }
+  return {
+    id: parsed.data.id,
+    userId: parsed.data.user_id,
+    weekKey: parsed.data.week_key,
+    biasSnapshot: parsed.data.bias_snapshot as unknown as WeeklyNudge["biasSnapshot"],
+    coachResponse: parsed.data.coach_response,
+    createdAt: parsed.data.created_at,
+  };
+}
+
+function sanitizeDbError(action: string, error: unknown): Error {
+  console.error(`[SupabaseRepository] Failed to ${action}:`, error);
+  return new Error(`Unable to ${action}. Please try again.`);
 }
 
 export class SupabaseRepository implements IStopBucksRepository {
   public readonly isGuest = false;
 
-  constructor(private readonly client: SupabaseClient) {}
+  constructor(
+    private readonly client: SupabaseClient,
+    private readonly fixedUserId?: string
+  ) {}
 
   private async getUserId(): Promise<string> {
-    const { data: { user }, error } = await this.client.auth.getUser();
+    if (this.fixedUserId) {
+      return this.fixedUserId;
+    }
+    const {
+      data: { user },
+      error,
+    } = await this.client.auth.getUser();
     if (error || !user) {
       throw new Error("User must be authenticated to perform this repository operation.");
     }
@@ -88,20 +180,11 @@ export class SupabaseRepository implements IStopBucksRepository {
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Failed to fetch user profile: ${error.message}`);
+      throw sanitizeDbError("fetch user profile", error);
     }
 
     if (!data) return null;
-
-    const row = data as DbProfile;
-    return {
-      userId: row.user_id,
-      currency: row.currency as UserProfile["currency"],
-      monthlyBudgetMinor: Number(row.monthly_budget_minor),
-      selfInvestTargetMinor: Number(row.self_invest_target_minor),
-      hourlyRateMinor: Number(row.hourly_rate_minor),
-      createdAt: row.created_at,
-    };
+    return mapProfileRow(data);
   }
 
   async createProfile(input: CreateProfileInput): Promise<UserProfile> {
@@ -115,25 +198,18 @@ export class SupabaseRepository implements IStopBucksRepository {
       hourly_rate_minor: input.hourlyRateMinor,
     };
 
+    // Use upsert on user_id to prevent PK race conditions across concurrent tabs
     const { data, error } = await this.client
       .from("profiles")
-      .insert(insertPayload)
+      .upsert(insertPayload, { onConflict: "user_id" })
       .select()
       .single();
 
     if (error) {
-      throw new Error(`Failed to create profile: ${error.message}`);
+      throw sanitizeDbError("create profile", error);
     }
 
-    const row = data as DbProfile;
-    return {
-      userId: row.user_id,
-      currency: row.currency as UserProfile["currency"],
-      monthlyBudgetMinor: Number(row.monthly_budget_minor),
-      selfInvestTargetMinor: Number(row.self_invest_target_minor),
-      hourlyRateMinor: Number(row.hourly_rate_minor),
-      createdAt: row.created_at,
-    };
+    return mapProfileRow(data);
   }
 
   async updateProfile(input: UpdateProfileInput): Promise<UserProfile> {
@@ -156,18 +232,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update profile: ${error.message}`);
+      throw sanitizeDbError("update profile", error);
     }
 
-    const row = data as DbProfile;
-    return {
-      userId: row.user_id,
-      currency: row.currency as UserProfile["currency"],
-      monthlyBudgetMinor: Number(row.monthly_budget_minor),
-      selfInvestTargetMinor: Number(row.self_invest_target_minor),
-      hourlyRateMinor: Number(row.hourly_rate_minor),
-      createdAt: row.created_at,
-    };
+    return mapProfileRow(data);
   }
 
   // Transactions Methods
@@ -181,19 +249,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .order("logged_at", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch transactions: ${error.message}`);
+      throw sanitizeDbError("fetch transactions", error);
     }
 
-    return (data as DbTransaction[]).map((row) => ({
-      id: row.id,
-      userId: row.user_id,
-      amountMinor: Number(row.amount_minor),
-      note: row.note,
-      triggerTag: row.trigger_tag as Transaction["triggerTag"],
-      paymentMode: row.payment_mode as Transaction["paymentMode"],
-      loggedAt: row.logged_at,
-      createdAt: row.created_at,
-    }));
+    return (data as unknown[]).map(mapTransactionRow);
   }
 
   async addTransaction(input: CreateTransactionInput): Promise<Transaction> {
@@ -214,20 +273,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to add transaction: ${error.message}`);
+      throw sanitizeDbError("add transaction", error);
     }
 
-    const row = data as DbTransaction;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      amountMinor: Number(row.amount_minor),
-      note: row.note,
-      triggerTag: row.trigger_tag as Transaction["triggerTag"],
-      paymentMode: row.payment_mode as Transaction["paymentMode"],
-      loggedAt: row.logged_at,
-      createdAt: row.created_at,
-    };
+    return mapTransactionRow(data);
   }
 
   async updateTransaction(
@@ -252,20 +301,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update transaction "${id}": ${error.message}`);
+      throw sanitizeDbError(`update transaction "${id}"`, error);
     }
 
-    const row = data as DbTransaction;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      amountMinor: Number(row.amount_minor),
-      note: row.note,
-      triggerTag: row.trigger_tag as Transaction["triggerTag"],
-      paymentMode: row.payment_mode as Transaction["paymentMode"],
-      loggedAt: row.logged_at,
-      createdAt: row.created_at,
-    };
+    return mapTransactionRow(data);
   }
 
   async deleteTransaction(id: string): Promise<void> {
@@ -278,7 +317,7 @@ export class SupabaseRepository implements IStopBucksRepository {
       .eq("user_id", userId);
 
     if (error) {
-      throw new Error(`Failed to delete transaction "${id}": ${error.message}`);
+      throw sanitizeDbError(`delete transaction "${id}"`, error);
     }
   }
 
@@ -293,20 +332,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .order("created_at", { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to fetch vault items: ${error.message}`);
+      throw sanitizeDbError("fetch vault items", error);
     }
 
-    return (data as DbVaultItem[]).map((row) => ({
-      id: row.id,
-      userId: row.user_id,
-      itemName: row.item_name,
-      priceMinor: Number(row.price_minor),
-      triggerTag: row.trigger_tag as VaultItem["triggerTag"],
-      unlockAt: row.unlock_at,
-      status: row.status as VaultItem["status"],
-      resolvedAt: row.resolved_at,
-      createdAt: row.created_at,
-    }));
+    return (data as unknown[]).map(mapVaultItemRow);
   }
 
   async addVaultItem(input: CreateVaultItemInput): Promise<VaultItem> {
@@ -329,21 +358,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to add vault item: ${error.message}`);
+      throw sanitizeDbError("add vault item", error);
     }
 
-    const row = data as DbVaultItem;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      itemName: row.item_name,
-      priceMinor: Number(row.price_minor),
-      triggerTag: row.trigger_tag as VaultItem["triggerTag"],
-      unlockAt: row.unlock_at,
-      status: row.status as VaultItem["status"],
-      resolvedAt: row.resolved_at,
-      createdAt: row.created_at,
-    };
+    return mapVaultItemRow(data);
   }
 
   async updateVaultItem(
@@ -367,21 +385,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update vault item "${id}": ${error.message}`);
+      throw sanitizeDbError(`update vault item "${id}"`, error);
     }
 
-    const row = data as DbVaultItem;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      itemName: row.item_name,
-      priceMinor: Number(row.price_minor),
-      triggerTag: row.trigger_tag as VaultItem["triggerTag"],
-      unlockAt: row.unlock_at,
-      status: row.status as VaultItem["status"],
-      resolvedAt: row.resolved_at,
-      createdAt: row.created_at,
-    };
+    return mapVaultItemRow(data);
   }
 
   async resolveVaultItem(
@@ -389,6 +396,12 @@ export class SupabaseRepository implements IStopBucksRepository {
     input: ResolveVaultItemInput
   ): Promise<VaultItem> {
     const userId = await this.getUserId();
+
+    if (input.status === "purchased") {
+      throw new Error(
+        "Purchased resolutions must use resolveVaultPurchase() so the transaction stays in sync."
+      );
+    }
 
     const { data, error } = await this.client
       .from("vault_items")
@@ -398,25 +411,56 @@ export class SupabaseRepository implements IStopBucksRepository {
       })
       .eq("id", id)
       .eq("user_id", userId)
+      .eq("status", "cooling")
+      .lte("unlock_at", new Date().toISOString())
       .select()
-      .single();
+      .maybeSingle();
 
-    if (error) {
-      throw new Error(`Failed to resolve vault item "${id}": ${error.message}`);
+    if (!error && !data) {
+      throw new Error(
+        `Vault item "${id}" is not available for resolution (already resolved or missing).`
+      );
     }
 
-    const row = data as DbVaultItem;
+    if (error) {
+      throw sanitizeDbError(`resolve vault item "${id}"`, error);
+    }
+
+    return mapVaultItemRow(data);
+  }
+
+  /**
+   * Atomic purchase resolution through the resolve_vault_purchase RPC:
+   * the vault status update and the transaction insert happen in one database
+   * transaction, guarded by ownership, status and unlock-time checks.
+   */
+  async resolveVaultPurchase(id: string): Promise<VaultPurchaseResult> {
+    const { data, error } = await this.client.rpc("resolve_vault_purchase", {
+      p_vault_item_id: id,
+    });
+
+    if (error) {
+      throw sanitizeDbError(`resolve vault purchase "${id}"`, error);
+    }
+
+    if (!data || typeof data !== "object") {
+      throw new Error(`Vault purchase "${id}" returned no result.`);
+    }
+
+    const payload = data as { item?: unknown; transaction?: unknown };
+    if (!payload.item || !payload.transaction) {
+      throw new Error(`Vault purchase "${id}" returned an incomplete result.`);
+    }
+
     return {
-      id: row.id,
-      userId: row.user_id,
-      itemName: row.item_name,
-      priceMinor: Number(row.price_minor),
-      triggerTag: row.trigger_tag as VaultItem["triggerTag"],
-      unlockAt: row.unlock_at,
-      status: row.status as VaultItem["status"],
-      resolvedAt: row.resolved_at,
-      createdAt: row.created_at,
+      item: mapVaultItemRow(payload.item),
+      transaction: mapTransactionRow(payload.transaction),
     };
+  }
+
+  /** Demo-only control; authenticated data must respect real elapsed time. */
+  async simulateVaultUnlock(_id: string): Promise<VaultItem> {
+    throw new Error("Simulated vault unlocks are only available in Guest Sandbox mode.");
   }
 
   // Weekly Nudges Methods
@@ -431,20 +475,11 @@ export class SupabaseRepository implements IStopBucksRepository {
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Failed to fetch weekly nudge: ${error.message}`);
+      throw sanitizeDbError("fetch weekly nudge", error);
     }
 
     if (!data) return null;
-
-    const row = data as DbWeeklyNudge;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      weekKey: row.week_key,
-      biasSnapshot: row.bias_snapshot as unknown as WeeklyNudge["biasSnapshot"],
-      coachResponse: row.coach_response,
-      createdAt: row.created_at,
-    };
+    return mapWeeklyNudgeRow(data);
   }
 
   async saveWeeklyNudge(input: SaveWeeklyNudgeInput): Promise<WeeklyNudge> {
@@ -465,18 +500,10 @@ export class SupabaseRepository implements IStopBucksRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to save weekly nudge: ${error.message}`);
+      throw sanitizeDbError("save weekly nudge", error);
     }
 
-    const row = data as DbWeeklyNudge;
-    return {
-      id: row.id,
-      userId: row.user_id,
-      weekKey: row.week_key,
-      biasSnapshot: row.bias_snapshot as unknown as WeeklyNudge["biasSnapshot"],
-      coachResponse: row.coach_response,
-      createdAt: row.created_at,
-    };
+    return mapWeeklyNudgeRow(data);
   }
 
   // Demo reset is disallowed for authenticated users
@@ -484,4 +511,3 @@ export class SupabaseRepository implements IStopBucksRepository {
     throw new Error("Demo reset is only supported in Guest Sandbox mode.");
   }
 }
-

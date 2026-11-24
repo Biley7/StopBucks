@@ -90,6 +90,8 @@ describe("StopBucks Guest Sandbox Repository", () => {
     expect(item.status).toBe("cooling");
     expect(item.unlockAt).toBeDefined();
 
+    await repo.simulateVaultUnlock(item.id);
+
     const resolved = await repo.resolveVaultItem(item.id, {
       status: "rescued",
     });

@@ -86,6 +86,31 @@ describe("StopBucks Behavioral Finance Engine", () => {
   });
 
   describe("Daily Runway Calculation", () => {
+    it("excludes future consumption and investment but includes an exact-reference transaction", () => {
+      const reference = new Date("2026-11-10T12:00:00.000Z");
+      const transaction = (id: string, amountMinor: number, triggerTag: Transaction["triggerTag"], loggedAt: string): Transaction => ({
+        id, userId: mockProfile.userId, amountMinor, triggerTag, loggedAt, createdAt: loggedAt, paymentMode: "cashless", note: id,
+      });
+      const runway = calculateDailyRunway(mockProfile, [
+        transaction("past", 10000, "need", "2026-11-09T12:00:00.000Z"),
+        transaction("exact", 20000, "need", reference.toISOString()),
+        transaction("future-spend", 30000, "need", "2026-11-11T12:00:00.000Z"),
+        transaction("future-invest", 40000, "invest_self", "2026-11-11T12:00:00.000Z"),
+      ], reference, "UTC");
+      expect(runway.monthToDateConsumptionMinor).toBe(30000);
+      expect(runway.monthToDateSelfInvestMinor).toBe(0);
+    });
+
+    it("uses the supplied timezone at a month boundary", () => {
+      const runway = calculateDailyRunway(
+        mockProfile,
+        [],
+        new Date("2026-11-30T19:00:00.000Z"),
+        "Asia/Kolkata"
+      );
+      expect(runway.currentDayOfMonth).toBe(1);
+      expect(runway.daysInMonth).toBe(31);
+    });
     it("computes safe to spend today accurately on day 10 of a 30-day month", () => {
       // Reference date: Nov 10, 2026 (November has 30 days)
       // Current day = 10 -> Days remaining = 30 - 10 + 1 = 21 days

@@ -21,6 +21,7 @@ import type {
   UpdateTransactionInput,
   UserProfile,
   VaultItem,
+  VaultPurchaseResult,
   WeeklyNudge,
 } from "@/domain/types";
 import type { IStopBucksRepository } from "./repository.interface";
@@ -283,10 +284,108 @@ export class GuestSandboxRepository implements IStopBucksRepository {
     }
 
     const current = payload.state.vaultItems[idx];
+    if (current.status !== "cooling") {
+      throw new Error(
+        `Vault item "${id}" is already resolved as "${current.status}".`
+      );
+    }
+    if (input.status === "purchased") {
+      throw new Error(
+        "Purchased resolutions must use resolveVaultPurchase() so the transaction stays in sync."
+      );
+    }
+    if (new Date(current.unlockAt).getTime() > Date.now()) {
+      throw new Error(`Vault item "${id}" is still cooling and cannot be resolved yet.`);
+    }
+
     const updated: VaultItem = {
       ...current,
       status: input.status,
       resolvedAt: input.resolvedAt || new Date().toISOString(),
+    };
+
+    payload.state.vaultItems[idx] = updated;
+    this.saveToStorage(payload);
+    return { ...updated };
+  }
+
+  /**
+   * Atomic guest transition: mark the item purchased and append exactly one
+   * transaction in a single persisted state write.
+   */
+  async resolveVaultPurchase(id: string): Promise<VaultPurchaseResult> {
+    const payload = this.getState();
+    const idx = payload.state.vaultItems.findIndex((item) => item.id === id);
+    if (idx === -1) {
+      throw new Error(`Vault item with id "${id}" not found.`);
+    }
+
+    const current = payload.state.vaultItems[idx];
+    if (current.status !== "cooling") {
+      throw new Error(
+        `Vault item "${id}" is already resolved as "${current.status}".`
+      );
+    }
+    if (new Date(current.unlockAt).getTime() > Date.now()) {
+      throw new Error(`Vault item "${id}" is still cooling and cannot be resolved yet.`);
+    }
+
+    const nowIso = new Date().toISOString();
+    const transaction: Transaction = {
+      id: `tx-vault-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      userId: payload.state.profile.userId,
+      amountMinor: current.priceMinor,
+      note: current.itemName,
+      triggerTag: current.triggerTag,
+      paymentMode: "cashless",
+      loggedAt: nowIso,
+      createdAt: nowIso,
+    };
+
+    const updatedItem: VaultItem = {
+      ...current,
+      status: "purchased",
+      resolvedAt: nowIso,
+    };
+
+    const nextVaultItems = [...payload.state.vaultItems];
+    nextVaultItems[idx] = updatedItem;
+
+    // Single write derived from a copy: both changes commit together or neither does.
+    const nextPayload: GuestStoragePayload = {
+      version: 1,
+      state: {
+        ...payload.state,
+        vaultItems: nextVaultItems,
+        transactions: [transaction, ...payload.state.transactions],
+      },
+      weeklyNudges: payload.weeklyNudges,
+    };
+
+    this.saveToStorage(nextPayload);
+
+    return { item: { ...updatedItem }, transaction: { ...transaction } };
+  }
+
+  /**
+   * Guest demo control: unlock a cooling item immediately (no system clock change).
+   */
+  async simulateVaultUnlock(id: string): Promise<VaultItem> {
+    const payload = this.getState();
+    const idx = payload.state.vaultItems.findIndex((item) => item.id === id);
+    if (idx === -1) {
+      throw new Error(`Vault item with id "${id}" not found.`);
+    }
+
+    const current = payload.state.vaultItems[idx];
+    if (current.status !== "cooling") {
+      throw new Error(
+        `Vault item "${id}" is already resolved as "${current.status}".`
+      );
+    }
+    const updated: VaultItem = {
+      ...current,
+      unlockAt: new Date(Date.now() - 60 * 1000).toISOString(),
     };
 
     payload.state.vaultItems[idx] = updated;

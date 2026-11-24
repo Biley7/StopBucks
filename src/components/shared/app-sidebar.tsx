@@ -3,6 +3,8 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Compass,
   Hourglass,
@@ -13,6 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRepository } from "@/repositories/repository-provider";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 
 export const NAV_ITEMS = [
   {
@@ -43,7 +47,19 @@ export const NAV_ITEMS = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isGuest, user } = useRepository();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { isGuest, user, exitGuestMode } = useRepository();
+
+  const endSession = async () => {
+    queryClient.clear();
+    if (isGuest) {
+      exitGuestMode();
+    } else {
+      await createClient()?.auth.signOut();
+    }
+    router.push("/");
+  };
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:inset-y-0 border-r border-slate-200 bg-white">
@@ -117,6 +133,9 @@ export function AppSidebar() {
               </span>
             </div>
           </div>
+          <Button variant="outline" size="sm" className="w-full" onClick={endSession}>
+            {isGuest ? "Exit Sandbox" : "Sign Out"}
+          </Button>
         </div>
       </div>
     </aside>

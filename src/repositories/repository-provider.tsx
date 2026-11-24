@@ -22,7 +22,9 @@ import React, {
   useState,
 } from "react";
 import type { User } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import type { CacheIdentity } from "@/lib/query-keys";
 import { GuestSandboxRepository } from "./guest-sandbox.repository";
 import type { IStopBucksRepository } from "./repository.interface";
 import { SupabaseRepository } from "./supabase.repository";
@@ -35,6 +37,7 @@ interface RepositoryContextValue {
   isLoading: boolean;
   user: User | null;
   activeMode: ActiveMode;
+  cacheIdentity: CacheIdentity;
   isSupabaseAvailable: boolean;
   enterGuestMode: () => void;
   exitGuestMode: () => void;
@@ -46,6 +49,7 @@ const GUEST_FLAG_KEY = "stopbucks_explicit_guest_mode";
 const RepositoryContext = createContext<RepositoryContextValue | null>(null);
 
 export function RepositoryProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [activeMode, setActiveMode] = useState<ActiveMode>("none");
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,8 +59,8 @@ export function RepositoryProvider({ children }: { children: React.ReactNode }) 
   const guestRepo = useMemo(() => new GuestSandboxRepository(), []);
   const supabaseClient = useMemo(() => createClient(), []);
   const supabaseRepo = useMemo(() => {
-    return supabaseClient ? new SupabaseRepository(supabaseClient) : null;
-  }, [supabaseClient]);
+    return supabaseClient ? new SupabaseRepository(supabaseClient, user?.id) : null;
+  }, [supabaseClient, user?.id]);
 
   // Synchronize authentication and guest states safely
   useEffect(() => {
@@ -168,6 +172,18 @@ export function RepositoryProvider({ children }: { children: React.ReactNode }) 
   }, [activeMode, supabaseRepo, guestRepo]);
 
   const isGuest = activeMode === "guest" || repository.isGuest;
+  const cacheIdentity = useMemo<CacheIdentity>(() => {
+    if (activeMode === "guest") return { mode: "guest", userId: "guest-sandbox-user" };
+    if (activeMode === "authenticated" && user) return { mode: "authenticated", userId: user.id };
+    return { mode: "none", userId: null };
+  }, [activeMode, user]);
+
+  const identityKey = `${cacheIdentity.mode}:${cacheIdentity.userId ?? ""}`;
+  useEffect(() => {
+    // Cancel old reads before their result can populate the next identity.
+    queryClient.cancelQueries();
+    queryClient.clear();
+  }, [identityKey, queryClient]);
 
   const value = useMemo<RepositoryContextValue>(() => {
     return {
@@ -176,6 +192,7 @@ export function RepositoryProvider({ children }: { children: React.ReactNode }) 
       isLoading,
       user,
       activeMode,
+      cacheIdentity,
       isSupabaseAvailable,
       enterGuestMode,
       exitGuestMode,
@@ -187,6 +204,7 @@ export function RepositoryProvider({ children }: { children: React.ReactNode }) 
     isLoading,
     user,
     activeMode,
+    cacheIdentity,
     isSupabaseAvailable,
     enterGuestMode,
     exitGuestMode,

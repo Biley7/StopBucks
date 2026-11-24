@@ -4,7 +4,10 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CheckCircle2, DollarSign, Sparkles, TrendingUp } from "lucide-react";
 import { onboardingSchema, type OnboardingFormValues } from "@/lib/schemas";
-import { toMinorUnits, fromMinorUnits, CURRENCY_CONFIGS } from "@/domain/currency";
+import { fromMinorUnits, CURRENCY_CONFIGS } from "@/domain/currency";
+import { parseAmountStringToMinor } from "@/domain/expense-parser";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import type { CurrencyCode } from "@/domain/types";
 import { useRepository } from "@/repositories/repository-provider";
 import { Button } from "@/components/ui/button";
@@ -21,7 +24,8 @@ import {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { repository, isGuest, isLoading: isRepoLoading } = useRepository();
+  const { repository, isGuest, isLoading: isRepoLoading, cacheIdentity } = useRepository();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -80,9 +84,13 @@ export default function OnboardingPage() {
 
     try {
       setIsSubmitting(true);
-      const budgetMinor = toMinorUnits(budgetNum);
-      const targetMinor = toMinorUnits(targetNum);
-      const rateMinor = toMinorUnits(rateNum);
+      const budgetMinor = parseAmountStringToMinor(monthlyBudget);
+      const targetMinor = parseAmountStringToMinor(selfInvestTarget);
+      const rateMinor = parseAmountStringToMinor(hourlyRate);
+      if (budgetMinor === null || targetMinor === null || rateMinor === null) {
+        setFormError("Enter amounts with no more than two decimal places.");
+        return;
+      }
 
       const existing = await repository.getProfile();
       if (existing) {
@@ -101,6 +109,8 @@ export default function OnboardingPage() {
         });
       }
 
+      await queryClient.invalidateQueries({ queryKey: queryKeys.profile(cacheIdentity) });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.transactions(cacheIdentity) });
       router.push("/runway");
     } catch (err) {
       setFormError(

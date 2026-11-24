@@ -96,6 +96,11 @@ export interface ResolveVaultItemInput {
   resolvedAt?: string;
 }
 
+export interface VaultPurchaseResult {
+  item: VaultItem;
+  transaction: Transaction;
+}
+
 export interface WeeklyNudge {
   id: string;
   userId: string;

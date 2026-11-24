@@ -2,6 +2,7 @@ import React from "react";
 import { AppSidebar } from "@/components/shared/app-sidebar";
 import { AppTopbar, MobileBottomNav } from "@/components/shared/app-topbar";
 import { GuestBanner } from "@/components/shared/guest-banner";
+import { AccessGate } from "@/components/shared/access-gate";
 
 export default function AppLayout({
   children,
@@ -9,7 +10,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <AccessGate><div className="flex min-h-screen flex-col bg-slate-50">
       {/* Subtle Guest Sandbox Banner with working Reset Demo */}
       <GuestBanner />
 
@@ -31,7 +32,7 @@ export default function AppLayout({
 
       {/* Mobile Fixed Bottom Navigation */}
       <MobileBottomNav />
-    </div>
+    </div></AccessGate>
   );
 }
 

@@ -86,3 +86,92 @@ export const createVaultItemSchema = z.object({
 });
 
 export type CreateVaultItemFormValues = z.infer<typeof createVaultItemSchema>;
+
+/**
+ * API: Natural-language expense parser
+ */
+export const parseExpenseRequestSchema = z.object({
+  input: z
+    .string({ required_error: "Expense description is required" })
+    .trim()
+    .min(1, "Expense description is required")
+    .max(280, "Expense description cannot exceed 280 characters"),
+  currency: currencySchema,
+});
+
+export type ParseExpenseRequest = z.infer<typeof parseExpenseRequestSchema>;
+
+export const parseExpenseResponseSchema = z.object({
+  amount_minor: z.number().int().positive(),
+  note: z.string().min(1).max(280),
+  suggested_trigger: triggerTagSchema,
+  suggested_payment_mode: paymentModeSchema,
+  source: z.enum(["gemini", "fallback"]),
+});
+
+export type ParseExpenseResponse = z.infer<typeof parseExpenseResponseSchema>;
+
+/**
+ * API: Weekly behavioral coach
+ */
+export const biasRiskLevelSchema = z.enum(["low", "moderate", "high"]);
+
+export const biasMetricSchema = z.object({
+  name: z.string(),
+  score: z.number().min(0).max(100),
+  level: biasRiskLevelSchema,
+  evidenceSummary: z.string(),
+  count: z.number().int().nonnegative(),
+  totalAmountMinor: z.number().int().nonnegative(),
+  percentage: z.number().min(0).max(100),
+  interpretation: z.string(),
+});
+
+export const biasAnalysisResultSchema = z.object({
+  lateNightDrift: biasMetricSchema,
+  cashlessNumbness: biasMetricSchema,
+  paydayBurn: biasMetricSchema,
+  socialFomo: biasMetricSchema,
+  overallRiskScore: z.number().min(0).max(100),
+  deterministicAdvice: z.array(z.string()),
+  analyzedAt: z.string(),
+});
+
+export const runwayMetricsSchema = z.object({
+  monthlyBudgetMinor: z.number().int().nonnegative(),
+  selfInvestTargetMinor: z.number().int().nonnegative(),
+  consumptionBudgetMinor: z.number().int().nonnegative(),
+  monthToDateConsumptionMinor: z.number().int().nonnegative(),
+  monthToDateSelfInvestMinor: z.number().int().nonnegative(),
+  remainingConsumptionMinor: z.number().int().nonnegative(),
+  daysInMonth: z.number().int().positive(),
+  currentDayOfMonth: z.number().int().positive(),
+  daysRemainingInMonth: z.number().int().positive(),
+  safeToSpendTodayMinor: z.number().int().nonnegative(),
+  growthToBurnRatio: z.number().nonnegative(),
+  isOverBudget: z.boolean(),
+});
+
+export const coachNudgeRequestSchema = z.object({
+  week_key: z
+    .string()
+    .regex(/^\d{4}-W\d{2}$/, "Week key must be an ISO week (e.g. 2026-W47)"),
+  currency: currencySchema,
+  bias_analysis: biasAnalysisResultSchema,
+  runway_metrics: runwayMetricsSchema,
+});
+
+export type CoachNudgeRequest = z.infer<typeof coachNudgeRequestSchema>;
+
+export const coachNudgeResponseSchema = z.object({
+  headline: z.string().min(1).max(160),
+  primary_bias: z.string().min(1).max(80),
+  three_day_experiment: z.string().min(1).max(600),
+  projected_savings_minor: z.number().int().nonnegative(),
+});
+
+export const coachNudgeApiResponseSchema = coachNudgeResponseSchema.extend({
+  source: z.enum(["gemini", "fallback"]),
+});
+
+export type CoachNudgeResponse = z.infer<typeof coachNudgeApiResponseSchema>;

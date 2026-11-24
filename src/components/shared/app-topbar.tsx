@@ -2,13 +2,31 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { LogOut } from "lucide-react";
+import { useRepository } from "@/repositories/repository-provider";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 import { PainOfPayingToggle } from "./pain-of-paying-toggle";
 import { NAV_ITEMS } from "./app-sidebar";
 
 export function AppTopbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { isGuest, exitGuestMode } = useRepository();
   const currentNav = NAV_ITEMS.find((item) => pathname.startsWith(item.href));
+
+  const endSession = async () => {
+    queryClient.clear();
+    if (isGuest) {
+      exitGuestMode();
+    } else {
+      await createClient()?.auth.signOut();
+    }
+    router.push("/");
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur-md sm:px-6">
@@ -29,9 +47,19 @@ export function AppTopbar() {
         </div>
       </div>
 
-      {/* Global Pain-of-Paying Toggle */}
-      <div className="flex items-center gap-3">
+      {/* Global Pain-of-Paying Toggle and Mobile Session Controls */}
+      <div className="flex items-center gap-2 sm:gap-3">
         <PainOfPayingToggle />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={endSession}
+          className="h-8 px-2 text-xs text-slate-600 hover:text-slate-900 md:hidden"
+          title={isGuest ? "Exit Sandbox" : "Sign Out"}
+        >
+          <LogOut className="h-3.5 w-3.5 mr-1" />
+          <span className="text-[11px]">{isGuest ? "Exit" : "Sign Out"}</span>
+        </Button>
       </div>
     </header>
   );

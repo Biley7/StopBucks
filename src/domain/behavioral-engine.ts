@@ -89,7 +89,7 @@ export function calculateGrowthToBurnRatio(
  * Helper to get local date components in a specified timezone.
  * Defaults to UTC if invalid or unspecified to guarantee deterministic behavior.
  */
-function getLocalDateParts(date: Date, timeZone?: string): {
+export function getLocalDateParts(date: Date, timeZone?: string): {
   year: number;
   month: number; // 1-12
   day: number; // 1-31
@@ -169,7 +169,13 @@ export function calculateDailyRunway(
     const tDate = new Date(t.loggedAt);
     const tParts = getLocalDateParts(tDate, timeZone);
 
-    if (tParts.year === refParts.year && tParts.month === refParts.month) {
+    // A ledger may legitimately contain planned/future rows. They remain visible,
+    // but cannot reduce a runway before their instant has arrived.
+    if (
+      tDate.getTime() <= referenceDate.getTime() &&
+      tParts.year === refParts.year &&
+      tParts.month === refParts.month
+    ) {
       if (t.triggerTag === "invest_self") {
         monthToDateSelfInvestMinor += t.amountMinor;
       } else {
@@ -466,12 +472,19 @@ export function detectSocialFomo(transactions: Transaction[]): BiasMetric {
 export function analyzeBiases(
   profile: Pick<UserProfile, "monthlyBudgetMinor">,
   transactions: Transaction[],
-  timeZone?: string
+  timeZone?: string,
+  analysisWindow?: { start: Date; end: Date }
 ): BiasAnalysisResult {
-  const lateNight = detectLateNightDrift(transactions, timeZone);
-  const cashless = detectCashlessNumbness(transactions, profile.monthlyBudgetMinor);
-  const payday = detectPaydayBurn(transactions, timeZone);
-  const fomo = detectSocialFomo(transactions);
+  const scopedTransactions = analysisWindow
+    ? transactions.filter((transaction) => {
+        const timestamp = new Date(transaction.loggedAt).getTime();
+        return timestamp >= analysisWindow.start.getTime() && timestamp <= analysisWindow.end.getTime();
+      })
+    : transactions;
+  const lateNight = detectLateNightDrift(scopedTransactions, timeZone);
+  const cashless = detectCashlessNumbness(scopedTransactions, profile.monthlyBudgetMinor);
+  const payday = detectPaydayBurn(scopedTransactions, timeZone);
+  const fomo = detectSocialFomo(scopedTransactions);
 
   // Overall risk score (composite average)
   const overallRiskScore = Math.round(

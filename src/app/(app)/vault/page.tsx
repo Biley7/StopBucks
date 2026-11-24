@@ -1,176 +1,234 @@
 "use client";
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Hourglass, ShieldCheck, Lock, Layers } from "lucide-react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { useRepository } from "@/repositories/repository-provider";
 import { useDisplayPreference } from "@/lib/display-preference-context";
+import { queryKeys } from "@/lib/query-keys";
+import { calculateMoneyRescuedMinor } from "@/domain/runway-insights";
+import { ParkImpulseForm } from "@/components/vault/park-impulse-form";
+import { CoolingItemCard } from "@/components/vault/cooling-item-card";
+import { VaultHistory } from "@/components/vault/vault-history";
+import type { VaultItem } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+type ResolutionAction = "rescued" | "purchased";
 
 export default function VaultPage() {
-  const { repository } = useRepository();
+  const { repository, isGuest, cacheIdentity, activeMode } = useRepository();
   const { formatAmount } = useDisplayPreference();
+  const queryClient = useQueryClient();
+  const [activeItemId, setActiveItemId] = useState<string | null>(null);
 
-  const { data: profile } = useQuery({
-    queryKey: ["profile"],
+  const profileQuery = useQuery({
+    queryKey: queryKeys.profile(cacheIdentity),
     queryFn: () => repository.getProfile(),
+    enabled: activeMode !== "none",
   });
 
-  const { data: vaultItems = [], isLoading } = useQuery({
-    queryKey: ["vaultItems"],
+  const vaultQuery = useQuery({
+    queryKey: queryKeys.vaultItems(cacheIdentity),
     queryFn: () => repository.getVaultItems(),
+    enabled: activeMode !== "none",
   });
 
-  const cooling = vaultItems.filter((i) => i.status === "cooling");
-  const rescued = vaultItems.filter((i) => i.status === "rescued");
-  const rescuedTotalMinor = rescued.reduce((acc, i) => acc + i.priceMinor, 0);
+  const invalidateVaultData = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.vaultItems(cacheIdentity) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.transactions(cacheIdentity) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.profile(cacheIdentity) });
+  };
 
-  return (
-    <div className="space-y-6">
-      {/* Module Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              48-Hour Cool-Off Vault
-            </h1>
-            <Badge variant="outline" className="border-sky-300 text-sky-700 bg-sky-50 text-[11px]">
-              Phase 1 Foundation
-            </Badge>
-          </div>
-          <p className="text-sm text-slate-500">
-            Pause mindless impulse before regret sets in.
-          </p>
+  const resolveMutation = useMutation({
+    mutationFn: async (input: { item: VaultItem; action: ResolutionAction }) => {
+      if (input.action === "rescued") {
+        return repository.resolveVaultItem(input.item.id, { status: "rescued" });
+      }
+      const result = await repository.resolveVaultPurchase(input.item.id);
+      return result.item;
+    },
+    onMutate: (input) => {
+      setActiveItemId(input.item.id);
+    },
+    onSuccess: (item, input) => {
+      toast.success(
+        input.action === "rescued"
+          ? "Money rescued — nothing was spent."
+          : "Purchase recorded in your ledger.",
+        {
+          description:
+            input.action === "rescued"
+              ? `${item.itemName} stays out of your runway.`
+              : `${item.itemName} created exactly one transaction.`,
+        }
+      );
+      invalidateVaultData();
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Could not resolve this vault item."
+      );
+    },
+    onSettled: () => {
+      setActiveItemId(null);
+    },
+  });
+
+  const simulateMutation = useMutation({
+    mutationFn: (item: VaultItem) => repository.simulateVaultUnlock(item.id),
+    onMutate: (item) => setActiveItemId(item.id),
+    onSuccess: () => {
+      toast.success("Demo: 48 hours have elapsed.");
+      queryClient.invalidateQueries({ queryKey: queryKeys.vaultItems(cacheIdentity) });
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error ? error.message : "Could not simulate the cool-off."
+      );
+    },
+    onSettled: () => setActiveItemId(null),
+  });
+
+  if (profileQuery.isLoading || vaultQuery.isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-6 w-56 animate-pulse rounded bg-slate-200" />
+        <div className="h-28 animate-pulse rounded-xl border border-slate-200 bg-white" />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
+          <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
         </div>
       </div>
+    );
+  }
 
-      {/* Vault Status Overview */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-amber-200 bg-amber-50/30">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-amber-600" />
-              <CardDescription className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
-                Currently Cooling Off
-              </CardDescription>
-            </div>
-            <CardTitle className="text-2xl font-extrabold text-amber-950">
-              {cooling.length} item{cooling.length === 1 ? "" : "s"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-amber-700">
-            Protected by active 48-hour dopamine cool-off timers
-          </CardContent>
-        </Card>
+  if (profileQuery.isError || vaultQuery.isError) {
+    return (
+      <Card className="p-8 text-center">
+        <h2 className="text-base font-semibold text-slate-900">Could not load the vault</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Your saved items are intact. Retry, or reload the module.
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-4"
+          onClick={() => {
+            profileQuery.refetch();
+            vaultQuery.refetch();
+          }}
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Retry
+        </Button>
+      </Card>
+    );
+  }
 
-        <Card className="border-emerald-200 bg-emerald-50/30">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              <CardDescription className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">
-                Rescued from Regret
-              </CardDescription>
-            </div>
-            <CardTitle className="text-2xl font-extrabold text-emerald-950">
-              {formatAmount(
-                rescuedTotalMinor,
-                profile?.currency || "INR",
-                profile?.hourlyRateMinor
-              )}
-            </CardTitle>
+  const profile = profileQuery.data;
+  if (!profile) {
+    return (
+      <Card className="border-amber-200 bg-amber-50 p-6">
+        <h2 className="text-base font-semibold text-amber-900">Set your baseline first</h2>
+        <p className="mt-1 text-xs text-amber-700">
+          The vault translates prices using your currency and hourly rate.
+        </p>
+        <Button asChild size="sm" className="mt-4 bg-amber-600 hover:bg-amber-700">
+          <Link href="/onboarding">Complete baseline</Link>
+        </Button>
+      </Card>
+    );
+  }
+
+  const vaultItems = vaultQuery.data ?? [];
+  const cooling = vaultItems.filter((item) => item.status === "cooling");
+  const resolved = vaultItems.filter((item) => item.status !== "cooling");
+  const moneyRescuedMinor = calculateMoneyRescuedMinor(vaultItems);
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          48-Hour Cool-Off Vault
+        </h1>
+        <p className="text-xs text-slate-500 sm:text-sm">
+          Pause mindless impulse. Protect self-investment.
+        </p>
+      </div>
+
+      {/* Money Rescued hero */}
+      <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
+        <CardHeader className="pb-1">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+              Money Rescued
+            </CardDescription>
+          </div>
+          <CardTitle className="text-3xl font-extrabold text-emerald-950">
+            {formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-800">
+          <span>
+            {resolved.filter((item) => item.status === "rescued").length} impulse
+            {resolved.filter((item) => item.status === "rescued").length === 1 ? "" : "s"}{" "}
+            released after cooling
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
+            <Sparkles className="h-3 w-3" />
+            Still available for your runway or self-investment.
+          </span>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ParkImpulseForm />
+
+        <Card className="border-slate-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Cooling Off</CardTitle>
+            <CardDescription className="text-xs">
+              {cooling.length === 0
+                ? "Nothing is cooling right now."
+                : `${cooling.length} impulse${cooling.length === 1 ? "" : "s"} waiting for perspective.`}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="text-xs text-emerald-700">
-            {rescued.length} impulsive purchase{rescued.length === 1 ? "" : "s"} avoided after cooling
+          <CardContent className="space-y-3">
+            {cooling.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center">
+                <p className="text-sm font-medium text-slate-700">Vault is clear</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Park something from the left when an impulse shows up.
+                </p>
+              </div>
+            ) : (
+              cooling.map((item) => (
+                <CoolingItemCard
+                  key={item.id}
+                  item={item}
+                  profile={profile}
+                  isGuest={isGuest}
+                  isResolving={resolveMutation.isPending && activeItemId === item.id}
+                  isSimulating={simulateMutation.isPending && activeItemId === item.id}
+                  onRescue={(target) =>
+                    resolveMutation.mutate({ item: target, action: "rescued" })
+                  }
+                  onPurchase={(target) =>
+                    resolveMutation.mutate({ item: target, action: "purchased" })
+                  }
+                  onSimulate={(target) => simulateMutation.mutate(target)}
+                />
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Phase 2 Feature Roadmap Announcement */}
-      <Card className="border-slate-200 bg-white">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-amber-600" />
-            <CardTitle className="text-base">Phase 2 Interactive Features: Coming Next</CardTitle>
-          </div>
-          <CardDescription>
-            The vault repository methods and status lifecycle are fully implemented. In Phase 2, this module will feature:
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-600">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-              <p className="font-semibold text-slate-900 text-xs">Live 48-Hour Countdown</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Visual circular timer counting down until unlocking.
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-              <p className="font-semibold text-slate-900 text-xs">The Post-Dopamine Prompt</p>
-              <p className="text-xs text-slate-500 mt-1">
-                "Do you still want this?" prompt with one-click "Rescue to Runway" or "Proceed".
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-              <p className="font-semibold text-slate-900 text-xs">Cumulative Savings Counter</p>
-              <p className="text-xs text-slate-500 mt-1">
-                Real-time tally of avoided purchases redirected to self-investment.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Seed Vault Items Verification */}
-      <Card className="border-slate-200 bg-white">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              Vault Items in Repository ({vaultItems.length})
-            </CardTitle>
-            <span className="text-xs text-slate-400">Connected to Active Repository</span>
-          </div>
-          <CardDescription>
-            Items tracked in the repository state demonstrating the cooling and rescued statuses.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <p className="text-xs text-slate-400">Loading vault items...</p>
-          ) : vaultItems.length === 0 ? (
-            <p className="text-xs text-slate-400">Vault is empty.</p>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {vaultItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-xs">
-                  <div className="space-y-0.5">
-                    <p className="font-medium text-slate-800">{item.itemName}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={item.status === "rescued" ? "success" : "warning"}
-                        className="text-[10px] px-1.5 py-0 capitalize"
-                      >
-                        {item.status}
-                      </Badge>
-                      <span className="text-[10px] text-slate-400 capitalize">
-                        {item.triggerTag.replace("_", " ")}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="font-semibold text-slate-900">
-                    {formatAmount(
-                      item.priceMinor,
-                      profile?.currency || "INR",
-                      profile?.hourlyRateMinor
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <VaultHistory items={resolved} profile={profile} />
     </div>
   );
 }
-

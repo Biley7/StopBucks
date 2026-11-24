@@ -18,6 +18,7 @@ import type {
   UpdateTransactionInput,
   UserProfile,
   VaultItem,
+  VaultPurchaseResult,
   WeeklyNudge,
 } from "@/domain/types";
 
@@ -43,6 +44,16 @@ export interface IStopBucksRepository {
   addVaultItem(input: CreateVaultItemInput): Promise<VaultItem>;
   updateVaultItem(id: string, input: Partial<CreateVaultItemInput>): Promise<VaultItem>;
   resolveVaultItem(id: string, input: ResolveVaultItemInput): Promise<VaultItem>;
+  /**
+   * Atomically resolve a cooled-off Vault item as purchased and create exactly
+   * one matching transaction. Rejects already-resolved or still-cooling items.
+   */
+  resolveVaultPurchase(id: string): Promise<VaultPurchaseResult>;
+  /**
+   * Guest Sandbox demo control: move a cooling item's unlock time into the past.
+   * Authenticated repositories reject this operation.
+   */
+  simulateVaultUnlock(id: string): Promise<VaultItem>;
 
   // Weekly Nudges
   getWeeklyNudge(weekKey: string): Promise<WeeklyNudge | null>;
