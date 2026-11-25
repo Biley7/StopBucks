@@ -10,9 +10,11 @@
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
+  CreateFixedCommitmentInput,
   CreateProfileInput,
   CreateTransactionInput,
   CreateVaultItemInput,
+  FixedCommitment,
   ResolveVaultItemInput,
   SaveWeeklyNudgeInput,
   Transaction,
@@ -24,6 +26,7 @@ import type {
   WeeklyNudge,
 } from "@/domain/types";
 import {
+  createFixedCommitmentSchema,
   currencySchema,
   paymentModeSchema,
   triggerTagSchema,
@@ -72,6 +75,42 @@ const dbWeeklyNudgeRowSchema = z.object({
   coach_response: z.record(z.unknown()),
   created_at: z.string().min(1),
 });
+
+export const dbFixedCommitmentRowSchema = z.object({
+  id: z.string().uuid("Invalid UUID for id"),
+  user_id: z.string().uuid("Invalid UUID for user_id"),
+  title: z.string().trim().min(1).max(80),
+  amount_minor: z.preprocess((val) => {
+    if (typeof val === "string") {
+      try {
+        const b = BigInt(val);
+        if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(-Number.MAX_SAFE_INTEGER)) {
+          return NaN;
+        }
+        return Number(b);
+      } catch {
+        return NaN;
+      }
+    }
+    return val;
+  }, z.number().int().positive().max(Number.MAX_SAFE_INTEGER)),
+  created_at: z.string().min(1),
+});
+
+export function mapFixedCommitmentRow(raw: unknown): FixedCommitment {
+  const parsed = dbFixedCommitmentRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid fixed commitment row data:", parsed.error);
+    throw new Error("Invalid fixed commitment data received from database.");
+  }
+  return {
+    id: parsed.data.id,
+    userId: parsed.data.user_id,
+    title: parsed.data.title,
+    amountMinor: parsed.data.amount_minor,
+    createdAt: parsed.data.created_at,
+  };
+}
 
 export function mapProfileRow(raw: unknown): UserProfile {
   const parsed = dbProfileRowSchema.safeParse(raw);
@@ -504,6 +543,60 @@ export class SupabaseRepository implements IStopBucksRepository {
     }
 
     return mapWeeklyNudgeRow(data);
+  }
+
+  // Fixed Commitments Methods
+  async getFixedCommitments(): Promise<FixedCommitment[]> {
+    const userId = await this.getUserId();
+
+    const { data, error } = await this.client
+      .from("fixed_commitments")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw sanitizeDbError("fetch fixed commitments", error);
+    }
+
+    return (data ?? []).map(mapFixedCommitmentRow);
+  }
+
+  async addFixedCommitment(input: CreateFixedCommitmentInput): Promise<FixedCommitment> {
+    const validated = createFixedCommitmentSchema.parse(input);
+    const userId = await this.getUserId();
+
+    const insertPayload = {
+      user_id: userId,
+      title: validated.title,
+      amount_minor: validated.amountMinor,
+    };
+
+    const { data, error } = await this.client
+      .from("fixed_commitments")
+      .insert(insertPayload)
+      .select()
+      .single();
+
+    if (error) {
+      throw sanitizeDbError("add fixed commitment", error);
+    }
+
+    return mapFixedCommitmentRow(data);
+  }
+
+  async deleteFixedCommitment(id: string): Promise<void> {
+    const userId = await this.getUserId();
+
+    const { error } = await this.client
+      .from("fixed_commitments")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId);
+
+    if (error) {
+      throw sanitizeDbError("delete fixed commitment", error);
+    }
   }
 
   // Demo reset is disallowed for authenticated users

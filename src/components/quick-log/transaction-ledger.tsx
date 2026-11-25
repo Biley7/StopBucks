@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Search, Trash2 } from "lucide-react";
+import { Download, Loader2, Pencil, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRepository } from "@/repositories/repository-provider";
 import { useDisplayPreference } from "@/lib/display-preference-context";
@@ -13,6 +13,7 @@ import {
   buildTransactionsCsvFilename,
   downloadCsv,
 } from "@/lib/csv";
+import { EditTransactionDialog } from "./edit-transaction-dialog";
 import type { PaymentMode, Transaction, TriggerTag, UserProfile } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ export function TransactionLedger({
   const [triggerFilter, setTriggerFilter] = useState<"all" | TriggerTag>("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | PaymentMode>("all");
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -223,15 +225,26 @@ export function TransactionLedger({
                         {formatAmount(tx.amountMinor, profile.currency, profile.hourlyRateMinor)}
                       </td>
                       <td className="py-2.5 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-red-600"
-                          onClick={() => setPendingDelete(tx)}
-                          aria-label={`Delete ${tx.note || "transaction"}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-slate-400 hover:text-sky-600"
+                            onClick={() => setEditingTx(tx)}
+                            aria-label={`Edit ${tx.note || "transaction"}`}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-slate-400 hover:text-red-600"
+                            onClick={() => setPendingDelete(tx)}
+                            aria-label={`Delete ${tx.note || "transaction"}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -261,15 +274,28 @@ export function TransactionLedger({
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <TriggerBadge trigger={tx.triggerTag} />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-slate-400 hover:text-red-600"
-                      onClick={() => setPendingDelete(tx)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-slate-400 hover:text-sky-600"
+                        onClick={() => setEditingTx(tx)}
+                        aria-label={`Edit ${tx.note || "transaction"}`}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-slate-400 hover:text-red-600"
+                        onClick={() => setPendingDelete(tx)}
+                        aria-label={`Delete ${tx.note || "transaction"}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -314,6 +340,15 @@ export function TransactionLedger({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <EditTransactionDialog
+        transaction={editingTx}
+        open={editingTx !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingTx(null);
+        }}
+        profile={profile}
+      />
     </Card>
   );
 }

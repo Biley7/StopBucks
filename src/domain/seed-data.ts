@@ -16,6 +16,7 @@
  */
 
 import type {
+  FixedCommitment,
   Transaction,
   UserProfile,
   VaultItem,
@@ -25,6 +26,7 @@ export interface GuestSeedState {
   profile: UserProfile;
   transactions: Transaction[];
   vaultItems: VaultItem[];
+  fixedCommitments: FixedCommitment[];
 }
 
 export function createInitialGuestState(referenceDate: Date = new Date()): GuestSeedState {
@@ -320,10 +322,38 @@ export function createInitialGuestState(referenceDate: Date = new Date()): Guest
     },
   ];
 
+  // Three realistic student fixed commitments:
+  // Mess: ₹4,500, Mobile & Wi-Fi: ₹800, Gym: ₹700 (Total ₹6,000 / 600,000 paise)
+  // Leaves ₹10,500 disposable consumption pool out of ₹20,000 monthly budget (after ₹3,500 self-invest)
+  const fixedCommitments: FixedCommitment[] = [
+    {
+      id: "fc-guest-01",
+      userId: profile.userId,
+      title: "Mess & Tiffin Subscription",
+      amountMinor: 450000, // ₹4,500.00
+      createdAt: relIso(30, 9, 0),
+    },
+    {
+      id: "fc-guest-02",
+      userId: profile.userId,
+      title: "Hostel Wi-Fi & Mobile Recharge",
+      amountMinor: 80000, // ₹800.00
+      createdAt: relIso(30, 9, 30),
+    },
+    {
+      id: "fc-guest-03",
+      userId: profile.userId,
+      title: "Campus Gym Membership",
+      amountMinor: 70000, // ₹700.00
+      createdAt: relIso(30, 10, 0),
+    },
+  ];
+
   return {
     profile,
     transactions,
     vaultItems,
+    fixedCommitments,
   };
 }
 

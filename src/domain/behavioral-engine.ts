@@ -48,23 +48,30 @@ export function categorizeTransactions(transactions: Transaction[]) {
 
 /**
  * Mental Accounting:
- * consumption_budget = max(0, monthly_budget - self_invest_target)
+ * consumption_budget = max(0, monthly_budget - self_invest_target - fixed_commitments)
  */
 export function calculateMentalAccounting(
   monthlyBudgetMinor: number,
-  selfInvestTargetMinor: number
+  selfInvestTargetMinor: number,
+  fixedCommitmentsMinor: number = 0
 ): {
   monthlyBudgetMinor: number;
   selfInvestTargetMinor: number;
+  fixedCommitmentsMinor: number;
   consumptionBudgetMinor: number;
 } {
   const safeBudget = Math.max(0, monthlyBudgetMinor);
   const safeTarget = Math.min(safeBudget, Math.max(0, selfInvestTargetMinor));
-  const consumptionBudgetMinor = Math.max(0, safeBudget - safeTarget);
+  const totalFixedCommitmentsMinor = Math.max(0, fixedCommitmentsMinor);
+  const consumptionBudgetMinor = Math.max(
+    0,
+    safeBudget - safeTarget - totalFixedCommitmentsMinor
+  );
 
   return {
     monthlyBudgetMinor: safeBudget,
     selfInvestTargetMinor: safeTarget,
+    fixedCommitmentsMinor: totalFixedCommitmentsMinor,
     consumptionBudgetMinor,
   };
 }
@@ -147,12 +154,14 @@ export function calculateDailyRunway(
   profile: Pick<UserProfile, "monthlyBudgetMinor" | "selfInvestTargetMinor">,
   transactions: Transaction[],
   referenceDate: Date = new Date(),
-  timeZone?: string
+  timeZone?: string,
+  fixedCommitmentsMinor: number = 0
 ): RunwayMetrics {
   const { monthlyBudgetMinor, selfInvestTargetMinor, consumptionBudgetMinor } =
     calculateMentalAccounting(
       profile?.monthlyBudgetMinor ?? 0,
-      profile?.selfInvestTargetMinor ?? 0
+      profile?.selfInvestTargetMinor ?? 0,
+      fixedCommitmentsMinor
     );
 
   const refParts = getLocalDateParts(referenceDate, timeZone);
@@ -202,6 +211,7 @@ export function calculateDailyRunway(
   return {
     monthlyBudgetMinor,
     selfInvestTargetMinor,
+    fixedCommitmentsMinor: Math.max(0, fixedCommitmentsMinor),
     consumptionBudgetMinor,
     monthToDateConsumptionMinor,
     monthToDateSelfInvestMinor,

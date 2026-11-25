@@ -8,6 +8,8 @@ export const queryKeys = {
   profile: (identity: CacheIdentity) => ["profile", identity.mode, identity.userId] as const,
   transactions: (identity: CacheIdentity) => ["transactions", identity.mode, identity.userId] as const,
   vaultItems: (identity: CacheIdentity) => ["vaultItems", identity.mode, identity.userId] as const,
+  fixedCommitments: (identity: CacheIdentity) =>
+    ["fixed-commitments", identity.mode, identity.userId] as const,
   weeklyNudge: (identity: CacheIdentity, weekKey: string) =>
     ["weekly-nudge", identity.mode, identity.userId, weekKey] as const,
 };

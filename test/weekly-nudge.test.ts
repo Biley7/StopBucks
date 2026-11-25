@@ -51,6 +51,7 @@ function makeBias(overrides: Partial<BiasAnalysisResult> = {}): BiasAnalysisResu
 const runway: RunwayMetrics = {
   monthlyBudgetMinor: 2000000,
   selfInvestTargetMinor: 400000,
+  fixedCommitmentsMinor: 0,
   consumptionBudgetMinor: 1600000,
   monthToDateConsumptionMinor: 240000,
   monthToDateSelfInvestMinor: 100000,

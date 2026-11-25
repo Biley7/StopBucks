@@ -26,7 +26,17 @@ export default function QuickLogPage() {
     enabled: activeMode !== "none",
   });
 
-  if (profileQuery.isLoading || transactionsQuery.isLoading) {
+  const fixedCommitmentsQuery = useQuery({
+    queryKey: queryKeys.fixedCommitments(cacheIdentity),
+    queryFn: () => repository.getFixedCommitments(),
+    enabled: activeMode !== "none",
+  });
+
+  if (
+    profileQuery.isLoading ||
+    transactionsQuery.isLoading ||
+    fixedCommitmentsQuery.isLoading
+  ) {
     return (
       <div className="space-y-4">
         <div className="h-6 w-48 animate-pulse rounded bg-slate-200" />
@@ -36,7 +46,11 @@ export default function QuickLogPage() {
     );
   }
 
-  if (profileQuery.isError || transactionsQuery.isError) {
+  if (
+    profileQuery.isError ||
+    transactionsQuery.isError ||
+    fixedCommitmentsQuery.isError
+  ) {
     return (
       <Card className="p-8 text-center">
         <h2 className="text-base font-semibold text-slate-900">Could not load the ledger</h2>
@@ -50,6 +64,7 @@ export default function QuickLogPage() {
           onClick={() => {
             profileQuery.refetch();
             transactionsQuery.refetch();
+            fixedCommitmentsQuery.refetch();
           }}
         >
           <RefreshCw className="h-3.5 w-3.5" />
@@ -60,6 +75,11 @@ export default function QuickLogPage() {
   }
 
   const profile = profileQuery.data;
+  const fixedCommitments = fixedCommitmentsQuery.data ?? [];
+  const totalFixedMinor = fixedCommitments.reduce(
+    (sum, fc) => sum + fc.amountMinor,
+    0
+  );
 
   if (!profile) {
     return (
@@ -86,7 +106,11 @@ export default function QuickLogPage() {
         </p>
       </div>
 
-      <QuickLogForm profile={profile} transactions={transactionsQuery.data ?? []} />
+      <QuickLogForm
+        profile={profile}
+        transactions={transactionsQuery.data ?? []}
+        fixedCommitmentsMinor={totalFixedMinor}
+      />
 
       <TransactionLedger
         profile={profile}

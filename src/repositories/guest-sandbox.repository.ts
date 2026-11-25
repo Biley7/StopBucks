@@ -11,9 +11,11 @@
 
 import { createInitialGuestState, type GuestSeedState } from "@/domain/seed-data";
 import type {
+  CreateFixedCommitmentInput,
   CreateProfileInput,
   CreateTransactionInput,
   CreateVaultItemInput,
+  FixedCommitment,
   ResolveVaultItemInput,
   SaveWeeklyNudgeInput,
   Transaction,
@@ -24,6 +26,7 @@ import type {
   VaultPurchaseResult,
   WeeklyNudge,
 } from "@/domain/types";
+import { createFixedCommitmentSchema } from "@/lib/schemas";
 import type { IStopBucksRepository } from "./repository.interface";
 
 const GUEST_STORAGE_KEY = "stopbucks_guest_sandbox_v1";
@@ -72,6 +75,9 @@ export class GuestSandboxRepository implements IStopBucksRepository {
 
       const parsed = JSON.parse(raw) as GuestStoragePayload;
       if (parsed && parsed.version === 1 && parsed.state && parsed.state.profile) {
+        if (!Array.isArray(parsed.state.fixedCommitments)) {
+          parsed.state.fixedCommitments = createInitialGuestState().fixedCommitments;
+        }
         return parsed;
       }
 
@@ -414,6 +420,45 @@ export class GuestSandboxRepository implements IStopBucksRepository {
     payload.weeklyNudges[input.weekKey] = saved;
     this.saveToStorage(payload);
     return { ...saved };
+  }
+
+  // Fixed Commitments Methods
+  async getFixedCommitments(): Promise<FixedCommitment[]> {
+    const payload = this.getState();
+    return (payload.state.fixedCommitments ?? []).map((item) => ({ ...item }));
+  }
+
+  async addFixedCommitment(input: CreateFixedCommitmentInput): Promise<FixedCommitment> {
+    const validated = createFixedCommitmentSchema.parse(input);
+    const payload = this.getState();
+    const id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `fc-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    const newCommitment: FixedCommitment = {
+      id,
+      userId: "guest-sandbox-user",
+      title: validated.title,
+      amountMinor: validated.amountMinor,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!payload.state.fixedCommitments) {
+      payload.state.fixedCommitments = [];
+    }
+    payload.state.fixedCommitments.unshift(newCommitment);
+    this.saveToStorage(payload);
+    return { ...newCommitment };
+  }
+
+  async deleteFixedCommitment(id: string): Promise<void> {
+    const payload = this.getState();
+    if (!payload.state.fixedCommitments) return;
+    payload.state.fixedCommitments = payload.state.fixedCommitments.filter(
+      (item) => item.id !== id
+    );
+    this.saveToStorage(payload);
   }
 
   // Guest Sandbox Reset

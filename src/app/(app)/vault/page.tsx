@@ -12,6 +12,7 @@ import { calculateMoneyRescuedMinor } from "@/domain/runway-insights";
 import { ParkImpulseForm } from "@/components/vault/park-impulse-form";
 import { CoolingItemCard } from "@/components/vault/cooling-item-card";
 import { VaultHistory } from "@/components/vault/vault-history";
+import { ImpulseSimulatorDialog } from "@/components/shared/impulse-simulator-dialog";
 import type { VaultItem } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -150,13 +151,28 @@ export default function VaultPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          48-Hour Cool-Off Vault
-        </h1>
-        <p className="text-xs text-slate-500 sm:text-sm">
-          Pause mindless impulse. Protect self-investment.
-        </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            48-Hour Cool-Off Vault
+          </h1>
+          <p className="text-xs text-slate-500 sm:text-sm">
+            Pause mindless impulse. Protect self-investment.
+          </p>
+        </div>
+        <ImpulseSimulatorDialog
+          profile={profile}
+          trigger={
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 border-sky-200 text-sky-800 hover:bg-sky-50 self-start sm:self-auto"
+            >
+              <Sparkles className="h-4 w-4 text-sky-600" />
+              Should I Buy This?
+            </Button>
+          }
+        />
       </div>
 
       {/* Money Rescued hero */}

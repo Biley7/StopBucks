@@ -69,6 +69,26 @@ export const createTransactionSchema = z.object({
 
 export type CreateTransactionFormValues = z.infer<typeof createTransactionSchema>;
 
+export const updateTransactionInputSchema = z.object({
+  amountMinor: z
+    .number({ invalid_type_error: "Amount must be a number" })
+    .int("Amount must be an integer")
+    .positive("Amount must be greater than zero")
+    .max(Number.MAX_SAFE_INTEGER, "Amount exceeds safe range")
+    .optional(),
+  note: z
+    .string()
+    .trim()
+    .min(1, "Description cannot be empty")
+    .max(280, "Note cannot exceed 280 characters")
+    .optional(),
+  triggerTag: triggerTagSchema.optional(),
+  paymentMode: paymentModeSchema.optional(),
+  loggedAt: z.string().datetime().optional(),
+});
+
+export type UpdateTransactionInputFormValues = z.infer<typeof updateTransactionInputSchema>;
+
 /**
  * Vault Item Creation Schema
  */
@@ -86,6 +106,24 @@ export const createVaultItemSchema = z.object({
 });
 
 export type CreateVaultItemFormValues = z.infer<typeof createVaultItemSchema>;
+
+/**
+ * Fixed Commitment Creation Schema
+ */
+export const createFixedCommitmentSchema = z.object({
+  title: z
+    .string({ required_error: "Title is required" })
+    .trim()
+    .min(1, "Title is required")
+    .max(80, "Title cannot exceed 80 characters"),
+  amountMinor: z
+    .number({ invalid_type_error: "Amount must be a number" })
+    .int("Amount must be an integer")
+    .positive("Amount must be greater than zero")
+    .max(Number.MAX_SAFE_INTEGER, "Amount exceeds safe range"),
+});
+
+export type CreateFixedCommitmentFormValues = z.infer<typeof createFixedCommitmentSchema>;
 
 /**
  * API: Natural-language expense parser
@@ -140,6 +178,7 @@ export const biasAnalysisResultSchema = z.object({
 export const runwayMetricsSchema = z.object({
   monthlyBudgetMinor: z.number().int().nonnegative(),
   selfInvestTargetMinor: z.number().int().nonnegative(),
+  fixedCommitmentsMinor: z.number().int().nonnegative().default(0),
   consumptionBudgetMinor: z.number().int().nonnegative(),
   monthToDateConsumptionMinor: z.number().int().nonnegative(),
   monthToDateSelfInvestMinor: z.number().int().nonnegative(),

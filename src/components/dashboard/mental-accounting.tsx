@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Flame, Sprout } from "lucide-react";
+import { Flame, Scale, Sprout } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { getConsumptionProgressPercent, TRIGGER_LABELS } from "@/domain/runway-insights";
@@ -47,9 +47,94 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
       : 0;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {/* Consumption burn */}
-      <Card className="border-slate-200">
+    <div className="space-y-4">
+      {/* True Disposable Runway Allocation breakdown */}
+      <Card className="border-slate-200 bg-slate-50/70">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+              <Scale className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle className="text-base text-slate-900">
+                True Disposable Runway Allocation
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500">
+                Monthly Budget − Fixed Bills Reserved − Invest-in-Self Protected = True Disposable Consumption Pool
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+            <div className="rounded-lg border border-slate-200/80 bg-white p-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                Monthly Budget
+              </div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-slate-900">
+                {formatAmount(
+                  runway.monthlyBudgetMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+              </div>
+              <p className="mt-0.5 text-[10px] text-slate-400">Total nominal budget</p>
+            </div>
+
+            <div className="rounded-lg border border-rose-200/80 bg-rose-50/40 p-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-rose-700">
+                − Fixed Bills Reserved
+              </div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-rose-600">
+                {formatAmount(
+                  runway.fixedCommitmentsMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+              </div>
+              <p className="mt-0.5 text-[10px] text-rose-500/80">Unavoidable commitments</p>
+            </div>
+
+            <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 p-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                − Invest-in-Self
+              </div>
+              <div className="mt-1 text-sm font-bold tabular-nums text-emerald-600">
+                {formatAmount(
+                  runway.selfInvestTargetMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+              </div>
+              <p className="mt-0.5 text-[10px] text-emerald-500/80">Ring-fenced growth</p>
+            </div>
+
+            <div className="rounded-lg border border-sky-300 bg-sky-50/80 p-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-800">
+                = Disposable Pool
+              </div>
+              <div className="mt-1 text-sm font-extrabold tabular-nums text-sky-950">
+                {formatAmount(
+                  runway.consumptionBudgetMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+              </div>
+              <p className="mt-0.5 text-[10px] text-sky-700">Actual consumption pool</p>
+            </div>
+          </div>
+
+          {runway.consumptionBudgetMinor === 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800">
+              Fixed commitments and protected investment account for your entire monthly budget. Your disposable consumption pool is {formatAmount(0, profile.currency, profile.hourlyRateMinor)}.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Consumption burn */}
+        <Card className="border-slate-200">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
@@ -178,6 +263,7 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
           </p>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ function makeRunway(overrides: Partial<RunwayMetrics> = {}): RunwayMetrics {
   return {
     monthlyBudgetMinor: 2000000,
     selfInvestTargetMinor: 400000,
+    fixedCommitmentsMinor: 0,
     consumptionBudgetMinor: 1600000,
     monthToDateConsumptionMinor: 0,
     monthToDateSelfInvestMinor: 0,

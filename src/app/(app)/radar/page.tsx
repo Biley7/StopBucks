@@ -1,22 +1,24 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { Calendar, Info, RefreshCw, ShieldCheck } from "lucide-react";
 import { useRepository } from "@/repositories/repository-provider";
 import { queryKeys } from "@/lib/query-keys";
-import { analyzeBiases } from "@/domain/behavioral-engine";
-import { getIsoWeekKey } from "@/domain/runway-insights";
-import { calculateDailyRunway } from "@/domain/behavioral-engine";
+import { analyzeBiases, calculateDailyRunway, getLocalDateParts } from "@/domain/behavioral-engine";
+import {
+  filterTransactionsByMonth,
+  getEndOfMonthDate,
+  type MonthYear,
+} from "@/domain/runway-insights";
 import { BiasRadarChart } from "@/components/bias-radar/bias-radar-chart";
 import { BiasCards } from "@/components/bias-radar/bias-cards";
 import { WeeklyCoach } from "@/components/bias-radar/weekly-coach";
+import { MonthSwitcher } from "@/components/shared/month-switcher";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { getClientTimeZone } from "@/lib/timezone";
-import { getLocalDateParts } from "@/domain/behavioral-engine";
 
 export default function RadarPage() {
   const { repository, cacheIdentity, activeMode } = useRepository();
@@ -35,16 +37,32 @@ export default function RadarPage() {
 
   const profile = profileQuery.data;
   const transactions = transactionsQuery.data ?? [];
-  const referenceDate = new Date();
+  const referenceDate = useMemo(() => new Date(), []);
   const timeZone = useMemo(getClientTimeZone, []);
-  const dateParts = getLocalDateParts(referenceDate, timeZone);
+
+  const currentMonthParts = useMemo(
+    () => getLocalDateParts(referenceDate, timeZone),
+    [referenceDate, timeZone]
+  );
+  const currentMonth: MonthYear = useMemo(
+    () => ({ year: currentMonthParts.year, month: currentMonthParts.month }),
+    [currentMonthParts.year, currentMonthParts.month]
+  );
+  const [selectedMonth, setSelectedMonth] = useState<MonthYear>(currentMonth);
+
+  const isCurrentMonth =
+    selectedMonth.year === currentMonth.year &&
+    selectedMonth.month === currentMonth.month;
+
   const analysisTransactions = useMemo(
-    () => transactions.filter((transaction) => {
-      const transactionDate = new Date(transaction.loggedAt);
-      const parts = getLocalDateParts(transactionDate, timeZone);
-      return transactionDate <= referenceDate && parts.year === dateParts.year && parts.month === dateParts.month;
-    }),
-    [transactions, timeZone, dateParts.year, dateParts.month]
+    () =>
+      filterTransactionsByMonth(
+        transactions,
+        selectedMonth.year,
+        selectedMonth.month,
+        timeZone
+      ),
+    [transactions, selectedMonth.year, selectedMonth.month, timeZone]
   );
 
   const bias = useMemo(
@@ -52,9 +70,22 @@ export default function RadarPage() {
     [profile, analysisTransactions, timeZone]
   );
 
+  const endOfMonthDate = useMemo(
+    () => getEndOfMonthDate(selectedMonth.year, selectedMonth.month, timeZone),
+    [selectedMonth.year, selectedMonth.month, timeZone]
+  );
+
   const runway = useMemo(
-    () => (profile ? calculateDailyRunway(profile, transactions, referenceDate, timeZone) : null),
-    [profile, transactions, timeZone]
+    () =>
+      profile
+        ? calculateDailyRunway(
+            profile,
+            isCurrentMonth ? transactions : analysisTransactions,
+            isCurrentMonth ? referenceDate : endOfMonthDate,
+            timeZone
+          )
+        : null,
+    [profile, isCurrentMonth, transactions, analysisTransactions, referenceDate, endOfMonthDate, timeZone]
   );
 
   if (profileQuery.isLoading || transactionsQuery.isLoading) {
@@ -115,12 +146,15 @@ export default function RadarPage() {
             Why do I spend?
           </h1>
           <p className="text-xs text-slate-500 sm:text-sm">
-            Four deterministic detectors · {analysisTransactions.length} transactions analysed
+            Four deterministic detectors · {analysisTransactions.length} transaction
+            {analysisTransactions.length === 1 ? "" : "s"} analysed
           </p>
         </div>
-        <Badge variant="outline" className="border-slate-300 text-[11px] text-slate-600">
-          {new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric", timeZone }).format(referenceDate)}
-        </Badge>
+        <MonthSwitcher
+          selectedMonth={selectedMonth}
+          currentMonth={currentMonth}
+          onChange={setSelectedMonth}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-5">
@@ -132,7 +166,18 @@ export default function RadarPage() {
         </div>
       </div>
 
-      <WeeklyCoach bias={bias} runway={runway} profile={profile} />
+      {isCurrentMonth ? (
+        <WeeklyCoach bias={bias} runway={runway} profile={profile} />
+      ) : (
+        <Card className="border-slate-200 bg-slate-50/70 p-4">
+          <div className="flex items-center gap-2.5 text-xs text-slate-600">
+            <Info className="h-4 w-4 text-slate-400 shrink-0" />
+            <p className="font-medium">
+              Weekly coaching experiments are available for the active month. Historical months are view-only.
+            </p>
+          </div>
+        </Card>
+      )}
 
       <Card className="border-emerald-200 bg-emerald-50/40">
         <CardHeader className="pb-2">

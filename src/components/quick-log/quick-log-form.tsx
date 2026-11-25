@@ -10,6 +10,8 @@ import { queryKeys } from "@/lib/query-keys";
 import { parseAmountStringToMinor } from "@/domain/expense-parser";
 import { fromMinorUnits } from "@/domain/currency";
 import { buildRunwayPreview, TRIGGER_LABELS, TRIGGER_ORDER } from "@/domain/runway-insights";
+import { getQuickLogPresets } from "@/domain/quick-log-presets";
+import { getClientTimeZone } from "@/lib/timezone";
 import { parseExpenseResponseSchema } from "@/lib/schemas";
 import type {
   PaymentMode,
@@ -26,6 +28,7 @@ import { cn } from "@/lib/utils";
 interface QuickLogFormProps {
   profile: UserProfile;
   transactions: Transaction[];
+  fixedCommitmentsMinor?: number;
 }
 
 const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
@@ -33,10 +36,15 @@ const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
   { value: "cashless", label: "Cashless" },
 ];
 
-export function QuickLogForm({ profile, transactions }: QuickLogFormProps) {
+export function QuickLogForm({
+  profile,
+  transactions,
+  fixedCommitmentsMinor = 0,
+}: QuickLogFormProps) {
   const { repository, cacheIdentity, isGuest } = useRepository();
   const { formatAmount } = useDisplayPreference();
   const queryClient = useQueryClient();
+  const timeZone = useMemo(getClientTimeZone, []);
 
   const [naturalInput, setNaturalInput] = useState("");
   const [isParsing, setIsParsing] = useState(false);
@@ -47,6 +55,8 @@ export function QuickLogForm({ profile, transactions }: QuickLogFormProps) {
   const [trigger, setTrigger] = useState<TriggerTag>("need");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("cashless");
   const [formError, setFormError] = useState<string | null>(null);
+
+  const presets = useMemo(() => getQuickLogPresets(profile.currency), [profile.currency]);
 
   const amountMinor = useMemo(() => {
     const trimmed = amountText.trim();
@@ -60,9 +70,12 @@ export function QuickLogForm({ profile, transactions }: QuickLogFormProps) {
         profile,
         transactions,
         amountMinor ?? 0,
-        trigger
+        trigger,
+        new Date(),
+        timeZone,
+        fixedCommitmentsMinor
       ),
-    [profile, transactions, amountMinor, trigger]
+    [profile, transactions, amountMinor, trigger, timeZone, fixedCommitmentsMinor]
   );
 
   const addMutation = useMutation({
@@ -266,7 +279,42 @@ export function QuickLogForm({ profile, transactions }: QuickLogFormProps) {
             Everything remains editable before it reaches your ledger.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label id="quick-presets-label" className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              1-Tap Quick Presets
+            </Label>
+            <div
+              role="group"
+              aria-labelledby="quick-presets-label"
+              aria-label="Student quick presets"
+              className="flex flex-wrap gap-2"
+            >
+              {presets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => {
+                    setAmountText(String(fromMinorUnits(preset.amountMinor)));
+                    setNote(preset.label);
+                    setTrigger(preset.triggerTag);
+                    setPaymentMode(preset.paymentMode);
+                    setFormError(null);
+                    setParseError(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs transition hover:border-sky-300 hover:bg-sky-50/60 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 active:scale-95"
+                  aria-label={`Preset: ${preset.label}, ${formatAmount(preset.amountMinor, profile.currency, profile.hourlyRateMinor)}`}
+                >
+                  <span aria-hidden="true">{preset.emoji}</span>
+                  <span>{preset.label}</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatAmount(preset.amountMinor, profile.currency, profile.hourlyRateMinor)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">

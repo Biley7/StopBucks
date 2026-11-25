@@ -6,6 +6,8 @@
 
 import {
   calculateDailyRunway,
+  calculateGrowthToBurnRatio,
+  calculateMentalAccounting,
   categorizeTransactions,
   getDaysInMonth,
   getLocalDateParts,
@@ -233,9 +235,16 @@ export function buildRunwayPreview(
   amountMinor: number,
   triggerTag: TriggerTag,
   referenceDate: Date = new Date(),
-  timeZone?: string
+  timeZone?: string,
+  fixedCommitmentsMinor: number = 0
 ): RunwayPreview {
-  const current = calculateDailyRunway(profile, transactions, referenceDate, timeZone);
+  const current = calculateDailyRunway(
+    profile,
+    transactions,
+    referenceDate,
+    timeZone,
+    fixedCommitmentsMinor
+  );
 
   const safeAmount = Number.isSafeInteger(amountMinor) && amountMinor > 0 ? amountMinor : 0;
 
@@ -254,7 +263,8 @@ export function buildRunwayPreview(
     profile,
     [...transactions, hypothetical],
     referenceDate,
-    timeZone
+    timeZone,
+    fixedCommitmentsMinor
   );
 
   return {
@@ -285,3 +295,183 @@ export function getIsoWeekKey(date: Date = new Date()): string {
 
   return `${target.getUTCFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
 }
+
+// -------------------------------------------------------------
+// Month-End Snapshot & Historical Month Filtering
+// -------------------------------------------------------------
+
+export interface MonthYear {
+  year: number;
+  month: number; // 1-12
+}
+
+export interface MonthEndSnapshot {
+  year: number;
+  month: number; // 1-12
+  totalConsumptionMinor: number;
+  totalSelfInvestMinor: number;
+  fixedCommitmentsMinor: number;
+  consumptionBudgetMinor: number;
+  surplusOrDeficitMinor: number; // positive = surplus, negative = deficit, 0 = on budget
+  isSurplus: boolean;
+  isDeficit: boolean;
+  growthToBurnRatio: number;
+  topTrigger: TriggerTag | null;
+  transactionCount: number;
+}
+
+/**
+ * Pure helper to filter transactions belonging to a specific calendar month
+ * in the explicitly supplied timezone.
+ */
+export function filterTransactionsByMonth(
+  transactions: Transaction[],
+  targetYear: number,
+  targetMonth: number, // 1-12
+  timeZone?: string
+): Transaction[] {
+  return transactions.filter((t) => {
+    const tDate = new Date(t.loggedAt);
+    const parts = getLocalDateParts(tDate, timeZone);
+    return parts.year === targetYear && parts.month === targetMonth;
+  });
+}
+
+/**
+ * Builds a deterministic, pure financial snapshot for a specific calendar month.
+ */
+export function buildMonthEndSnapshot(
+  transactions: Transaction[],
+  profile: Pick<UserProfile, "monthlyBudgetMinor" | "selfInvestTargetMinor">,
+  fixedCommitmentsMinor: number,
+  targetYear: number,
+  targetMonth: number, // 1-12
+  timeZone?: string
+): MonthEndSnapshot {
+  // 1. Filter transactions to target calendar month in explicit timezone
+  const monthTransactions = filterTransactionsByMonth(
+    transactions,
+    targetYear,
+    targetMonth,
+    timeZone
+  );
+
+  // 2. Categorize transactions into consumption vs self-investment
+  const {
+    consumptionTotalMinor,
+    investSelfTotalMinor,
+    consumption,
+  } = categorizeTransactions(monthTransactions);
+
+  // 3. Compute consumption budget using Phase 4A accounting
+  const { consumptionBudgetMinor, fixedCommitmentsMinor: safeFixed } =
+    calculateMentalAccounting(
+      profile?.monthlyBudgetMinor ?? 0,
+      profile?.selfInvestTargetMinor ?? 0,
+      fixedCommitmentsMinor
+    );
+
+  // 4. Surplus or Deficit
+  const surplusOrDeficitMinor = consumptionBudgetMinor - consumptionTotalMinor;
+  const isSurplus = surplusOrDeficitMinor > 0;
+  const isDeficit = surplusOrDeficitMinor < 0;
+
+  // 5. Growth-to-burn ratio
+  const growthToBurnRatio = calculateGrowthToBurnRatio(
+    investSelfTotalMinor,
+    consumptionTotalMinor
+  );
+
+  // 6. Find dominant consumption trigger (tie-breaking in canonical TRIGGER_ORDER)
+  // Self-investment is strictly excluded from consumption top trigger
+  const triggerTotals = new Map<TriggerTag, number>();
+  for (const t of consumption) {
+    triggerTotals.set(t.triggerTag, (triggerTotals.get(t.triggerTag) ?? 0) + t.amountMinor);
+  }
+
+  let topTrigger: TriggerTag | null = null;
+  let maxSpendMinor = 0;
+
+  for (const tag of TRIGGER_ORDER) {
+    if (tag === "invest_self") continue;
+    const spend = triggerTotals.get(tag) ?? 0;
+    if (spend > maxSpendMinor) {
+      maxSpendMinor = spend;
+      topTrigger = tag;
+    }
+  }
+
+  return {
+    year: targetYear,
+    month: targetMonth,
+    totalConsumptionMinor: consumptionTotalMinor,
+    totalSelfInvestMinor: investSelfTotalMinor,
+    fixedCommitmentsMinor: safeFixed,
+    consumptionBudgetMinor,
+    surplusOrDeficitMinor,
+    isSurplus,
+    isDeficit,
+    growthToBurnRatio,
+    topTrigger,
+    transactionCount: monthTransactions.length,
+  };
+}
+
+/**
+ * Returns a deterministic Date object corresponding to the final millisecond (23:59:59.999)
+ * of the given calendar year and month (1-12) in the specified timeZone.
+ */
+export function getEndOfMonthDate(
+  year: number,
+  month: number, // 1-12
+  timeZone?: string
+): Date {
+  const daysInMonth = getDaysInMonth(year, month - 1);
+  const localTargetUtcMs = Date.UTC(year, month - 1, daysInMonth, 23, 59, 59, 999);
+
+  if (!timeZone || timeZone === "UTC") {
+    return new Date(localTargetUtcMs);
+  }
+
+  try {
+    // Probe noon UTC on the target date to calculate local timezone offset
+    const probe = new Date(Date.UTC(year, month - 1, daysInMonth, 12, 0, 0, 0));
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(probe);
+    let y = year;
+    let m = month;
+    let d = daysInMonth;
+    let h = 12;
+    let min = 0;
+    let s = 0;
+
+    for (const part of parts) {
+      if (part.type === "year") y = parseInt(part.value, 10);
+      if (part.type === "month") m = parseInt(part.value, 10);
+      if (part.type === "day") d = parseInt(part.value, 10);
+      if (part.type === "hour") {
+        const val = parseInt(part.value, 10);
+        h = val === 24 ? 0 : val;
+      }
+      if (part.type === "minute") min = parseInt(part.value, 10);
+      if (part.type === "second") s = parseInt(part.value, 10);
+    }
+
+    const localProbeMs = Date.UTC(y, m - 1, d, h, min, s);
+    const offsetMs = localProbeMs - probe.getTime();
+
+    return new Date(localTargetUtcMs - offsetMs);
+  } catch {
+    return new Date(localTargetUtcMs);
+  }
+}
+

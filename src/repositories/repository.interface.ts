@@ -8,9 +8,11 @@
  */
 
 import type {
+  CreateFixedCommitmentInput,
   CreateProfileInput,
   CreateTransactionInput,
   CreateVaultItemInput,
+  FixedCommitment,
   ResolveVaultItemInput,
   SaveWeeklyNudgeInput,
   Transaction,
@@ -38,6 +40,11 @@ export interface IStopBucksRepository {
   addTransaction(input: CreateTransactionInput): Promise<Transaction>;
   updateTransaction(id: string, input: UpdateTransactionInput): Promise<Transaction>;
   deleteTransaction(id: string): Promise<void>;
+
+  // Fixed Commitments
+  getFixedCommitments(): Promise<FixedCommitment[]>;
+  addFixedCommitment(input: CreateFixedCommitmentInput): Promise<FixedCommitment>;
+  deleteFixedCommitment(id: string): Promise<void>;
 
   // Vault Items
   getVaultItems(): Promise<VaultItem[]>;

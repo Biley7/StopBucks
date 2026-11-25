@@ -116,9 +116,23 @@ export interface SaveWeeklyNudgeInput {
   coachResponse: Record<string, unknown>;
 }
 
+export interface FixedCommitment {
+  id: string;
+  userId: string;
+  title: string;
+  amountMinor: number;
+  createdAt: string;
+}
+
+export interface CreateFixedCommitmentInput {
+  title: string;
+  amountMinor: number;
+}
+
 export interface RunwayMetrics {
   monthlyBudgetMinor: number;
   selfInvestTargetMinor: number;
+  fixedCommitmentsMinor: number;
   consumptionBudgetMinor: number;
   monthToDateConsumptionMinor: number;
   monthToDateSelfInvestMinor: number;
