@@ -60,7 +60,8 @@ import { DojoSkillMap } from "@/components/dojo/dojo-skill-map";
 import { DojoLevelBriefing } from "@/components/dojo/dojo-level-briefing";
 import { DojoTrophyDrawer } from "@/components/dojo/dojo-trophy-drawer";
 import { DojoCitationModal } from "@/components/dojo/dojo-citation-modal";
-import { DojoLessonHandoffDialog } from "@/components/dojo/dojo-lesson-handoff-dialog";
+import { DojoLessonArena } from "@/components/dojo/dojo-lesson-arena";
+import { DisplayPreferenceProvider } from "@/lib/display-preference-context";
 
 describe("Phase 5B: Navigation Integration", () => {
   it("includes all five destinations in order with /dojo as the 5th tab", () => {
@@ -187,17 +188,41 @@ describe("Phase 5B: Level Node, Briefing, and Phase 5C Handoff", () => {
     expect(activeBriefingHtml).toContain("Prelec &amp; Loewenstein (1998)");
   });
 
-  it("renders the Phase 5C lesson handoff dialog with selected level details", () => {
+  it("renders the Phase 5C training arena for an unlocked level", () => {
+    const progress: DojoProgress = {
+      ...createInitialDojoProgress(),
+      completedLevels: [1, 2, 3].map((id) => ({
+        levelId: id as DojoLevelId,
+        bestAccuracyPct: 100,
+        earnedXp: 120,
+        completedAt: "2026-11-26T10:00:00.000Z",
+        replayCount: 0,
+      })),
+      totalXp: 360,
+    };
+
     const html = renderToStaticMarkup(
-      React.createElement(DojoLessonHandoffDialog, {
-        levelId: 4,
-        onClose: vi.fn(),
-      })
+      React.createElement(
+        DisplayPreferenceProvider,
+        null,
+        React.createElement(DojoLessonArena, {
+          levelId: 4,
+          progress,
+          profile: null,
+          transactions: [],
+          fixedCommitments: [],
+          vaultItems: [],
+          onToggleMute: vi.fn(),
+          onCompleteProgress: vi.fn(async (next) => next),
+          onExitToMap: vi.fn(),
+          onStartNextLevel: vi.fn(),
+        })
+      )
     );
-    expect(html).toContain("Training Room Ready — Phase 5C");
     expect(html).toContain("Level 4");
     expect(html).toContain("The Deal Trap &amp; Broad Brackets");
-    expect(html).toContain("Back to Map");
+    expect(html).toContain("Beat 1");
+    expect(html).toContain("Research Wager");
   });
 
   it("renders all 3 worlds, 8 connectors, and 9 nodes in DojoSkillMap", () => {
