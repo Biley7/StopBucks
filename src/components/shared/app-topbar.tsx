@@ -16,7 +16,9 @@ export function AppTopbar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isGuest, exitGuestMode } = useRepository();
-  const currentNav = NAV_ITEMS.find((item) => pathname.startsWith(item.href));
+  const currentNav = NAV_ITEMS.find(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+  );
 
   const endSession = async () => {
     queryClient.clear();
@@ -69,22 +71,27 @@ export function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white px-2 md:hidden shadow-lg">
+    <nav
+      aria-label="Primary mobile navigation"
+      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 items-center border-t border-slate-200 bg-white px-1 pb-[env(safe-area-inset-bottom)] shadow-lg md:hidden"
+    >
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname.startsWith(item.href);
+        const isActive =
+          pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${
+            aria-current={isActive ? "page" : undefined}
+            className={`flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1.5 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${
               isActive
                 ? "text-sky-600 font-semibold"
                 : "text-slate-500 hover:text-slate-900"
             }`}
           >
-            <Icon className="h-5 w-5" />
-            <span>{item.name}</span>
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="whitespace-nowrap leading-none">{item.shortName}</span>
           </Link>
         );
       })}

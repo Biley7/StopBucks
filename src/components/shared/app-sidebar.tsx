@@ -10,6 +10,7 @@ import {
   Hourglass,
   PlusCircle,
   Sliders,
+  Swords,
   TrendingUp,
   User,
 } from "lucide-react";
@@ -21,29 +22,40 @@ import { Button } from "@/components/ui/button";
 export const NAV_ITEMS = [
   {
     name: "Daily Runway",
+    shortName: "Runway",
     href: "/runway",
     icon: TrendingUp,
     description: "Safe spending allowance",
   },
   {
     name: "Quick Log",
+    shortName: "Log",
     href: "/log",
     icon: PlusCircle,
     description: "Capture triggers fast",
   },
   {
     name: "Bias Radar",
+    shortName: "Radar",
     href: "/radar",
     icon: Compass,
     description: "Behavioral bias analysis",
   },
   {
     name: "Cool-Off Vault",
+    shortName: "Vault",
     href: "/vault",
     icon: Hourglass,
     description: "48-hour impulse lock",
   },
-];
+  {
+    name: "Behavioral Dojo",
+    shortName: "Dojo",
+    href: "/dojo",
+    icon: Swords,
+    description: "3-world behavioral finance mastery",
+  },
+] as const;
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -85,14 +97,16 @@ export function AppSidebar() {
             Core Modules
           </div>
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                   isActive
                     ? "bg-sky-50 text-sky-700 font-semibold shadow-xs"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
