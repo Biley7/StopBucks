@@ -4,6 +4,7 @@
  */
 
 import { z } from "zod";
+import type { DojoLevelId, DojoProgress } from "@/domain/dojo-types";
 
 export const currencySchema = z.enum(["INR", "HKD", "USD"], {
   errorMap: () => ({ message: "Supported currencies are INR, HKD, and USD only." }),
@@ -214,3 +215,139 @@ export const coachNudgeApiResponseSchema = coachNudgeResponseSchema.extend({
 });
 
 export type CoachNudgeResponse = z.infer<typeof coachNudgeApiResponseSchema>;
+
+/**
+ * StopBucks Dojo Progression Validation & Row Mapping
+ */
+export const dojoDateKeySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must use YYYY-MM-DD format")
+  .refine((value) => {
+    const [yearStr, monthStr, dayStr] = value.split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const day = Number(dayStr);
+    const utc = new Date(Date.UTC(year, month - 1, day));
+    return (
+      utc.getUTCFullYear() === year &&
+      utc.getUTCMonth() + 1 === month &&
+      utc.getUTCDate() === day
+    );
+  }, "Date must be a valid calendar date");
+
+export const dojoIsoTimestampSchema = z
+  .string()
+  .min(1, "Timestamp is required")
+  .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid ISO timestamp");
+
+export const dojoLevelIdSchema = z
+  .number()
+  .int("Level ID must be an integer")
+  .min(1, "Level ID must be between 1 and 9")
+  .max(9, "Level ID must be between 1 and 9");
+
+export const dojoBadgeIdSchema = z
+  .string()
+  .trim()
+  .min(1, "Badge ID cannot be empty")
+  .max(64, "Badge ID cannot exceed 64 characters");
+
+export const dojoUnlockedBadgesSchema = z.array(dojoBadgeIdSchema);
+
+export const dojoLevelCompletionSchema = z.object({
+  levelId: dojoLevelIdSchema,
+  bestAccuracyPct: z
+    .number()
+    .refine(Number.isFinite, "Accuracy must be finite")
+    .refine((n) => n >= 0 && n <= 100, "Accuracy must be between 0 and 100"),
+  earnedXp: z
+    .number()
+    .int("Earned XP must be an integer")
+    .nonnegative("Earned XP cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "Earned XP exceeds safe range"),
+  completedAt: dojoIsoTimestampSchema,
+  replayCount: z
+    .number()
+    .int("Replay count must be an integer")
+    .nonnegative("Replay count cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "Replay count exceeds safe range"),
+});
+
+export const dojoCompletedLevelsSchema = z
+  .array(dojoLevelCompletionSchema)
+  .refine(
+    (entries) => new Set(entries.map((entry) => entry.levelId)).size === entries.length,
+    "Duplicate level completion records are not allowed"
+  );
+
+export const dojoProgressSchema = z.object({
+  completedLevels: dojoCompletedLevelsSchema,
+  totalXp: z
+    .number()
+    .int("Total XP must be an integer")
+    .nonnegative("Total XP cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "Total XP exceeds safe range"),
+  currentStreak: z
+    .number()
+    .int("Current streak must be an integer")
+    .nonnegative("Current streak cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "Current streak exceeds safe range"),
+  longestStreak: z
+    .number()
+    .int("Longest streak must be an integer")
+    .nonnegative("Longest streak cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "Longest streak exceeds safe range"),
+  lastCompletedDate: dojoDateKeySchema.nullable(),
+  unlockedBadges: dojoUnlockedBadgesSchema,
+  soundMuted: z.boolean(),
+  updatedAt: dojoIsoTimestampSchema,
+});
+
+export const dbDojoProgressRowSchema = z.object({
+  user_id: z.string().min(1, "user_id is required"),
+  completed_levels: dojoCompletedLevelsSchema,
+  total_xp: z
+    .number()
+    .int("total_xp must be an integer")
+    .nonnegative("total_xp cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "total_xp exceeds safe range"),
+  current_streak: z
+    .number()
+    .int("current_streak must be an integer")
+    .nonnegative("current_streak cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "current_streak exceeds safe range"),
+  longest_streak: z
+    .number()
+    .int("longest_streak must be an integer")
+    .nonnegative("longest_streak cannot be negative")
+    .max(Number.MAX_SAFE_INTEGER, "longest_streak exceeds safe range"),
+  last_completed_date: dojoDateKeySchema.nullable(),
+  unlocked_badges: dojoUnlockedBadgesSchema,
+  sound_muted: z.boolean(),
+  updated_at: dojoIsoTimestampSchema,
+});
+
+export function mapDojoProgressRow(raw: unknown): DojoProgress {
+  const parsed = dbDojoProgressRowSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error("[SupabaseRepository] Invalid dojo progress row data:", parsed.error);
+    throw new Error("Invalid dojo progress data received from database.");
+  }
+
+  return {
+    completedLevels: parsed.data.completed_levels.map((entry) => ({
+      levelId: entry.levelId as DojoLevelId,
+      bestAccuracyPct: entry.bestAccuracyPct,
+      earnedXp: entry.earnedXp,
+      completedAt: entry.completedAt,
+      replayCount: entry.replayCount,
+    })),
+    totalXp: parsed.data.total_xp,
+    currentStreak: parsed.data.current_streak,
+    longestStreak: parsed.data.longest_streak,
+    lastCompletedDate: parsed.data.last_completed_date,
+    unlockedBadges: [...parsed.data.unlocked_badges],
+    soundMuted: parsed.data.sound_muted,
+    updatedAt: parsed.data.updated_at,
+  };
+}

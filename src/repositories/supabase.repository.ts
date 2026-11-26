@@ -9,6 +9,8 @@
 
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createInitialDojoProgress } from "@/domain/dojo-engine";
+import type { DojoProgress } from "@/domain/dojo-types";
 import type {
   CreateFixedCommitmentInput,
   CreateProfileInput,
@@ -28,11 +30,16 @@ import type {
 import {
   createFixedCommitmentSchema,
   currencySchema,
+  dbDojoProgressRowSchema,
+  dojoProgressSchema,
+  mapDojoProgressRow,
   paymentModeSchema,
   triggerTagSchema,
   vaultStatusSchema,
 } from "@/lib/schemas";
 import type { IStopBucksRepository } from "./repository.interface";
+
+export { dbDojoProgressRowSchema, mapDojoProgressRow };
 
 // Row schemas for runtime database validation
 const dbProfileRowSchema = z.object({
@@ -597,6 +604,56 @@ export class SupabaseRepository implements IStopBucksRepository {
     if (error) {
       throw sanitizeDbError("delete fixed commitment", error);
     }
+  }
+
+  // Dojo Learning Progression Methods
+  async getDojoProgress(): Promise<DojoProgress> {
+    const userId = await this.getUserId();
+
+    const { data, error } = await this.client
+      .from("dojo_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw sanitizeDbError("fetch dojo progress", error);
+    }
+
+    if (!data) {
+      return createInitialDojoProgress();
+    }
+
+    return mapDojoProgressRow(data);
+  }
+
+  async saveDojoProgress(progress: DojoProgress): Promise<DojoProgress> {
+    const validated = dojoProgressSchema.parse(progress) as DojoProgress;
+    const userId = await this.getUserId();
+
+    const upsertPayload = {
+      user_id: userId,
+      completed_levels: validated.completedLevels.map((entry) => ({ ...entry })),
+      total_xp: validated.totalXp,
+      current_streak: validated.currentStreak,
+      longest_streak: validated.longestStreak,
+      last_completed_date: validated.lastCompletedDate,
+      unlocked_badges: [...validated.unlockedBadges],
+      sound_muted: validated.soundMuted,
+      updated_at: validated.updatedAt,
+    };
+
+    const { data, error } = await this.client
+      .from("dojo_progress")
+      .upsert(upsertPayload, { onConflict: "user_id" })
+      .select()
+      .single();
+
+    if (error) {
+      throw sanitizeDbError("save dojo progress", error);
+    }
+
+    return mapDojoProgressRow(data);
   }
 
   // Demo reset is disallowed for authenticated users

@@ -146,6 +146,38 @@ export function getDaysInMonth(year: number, monthIndex0Based: number): number {
 }
 
 /**
+ * Filters transactions falling within the current local calendar month up to
+ * and including the reference instant. Future-dated entries remain in the ledger
+ * but are excluded from month-to-date runway and mirror calculations.
+ */
+export function filterCurrentMonthTransactionsToDate(
+  transactions: Transaction[],
+  referenceDate: Date = new Date(),
+  timeZone?: string
+): Transaction[] {
+  const refTime = referenceDate.getTime();
+  const refParts = getLocalDateParts(referenceDate, timeZone);
+
+  return transactions.filter((t) => {
+    const tDate = new Date(t.loggedAt);
+    const tTime = tDate.getTime();
+    if (Number.isNaN(tTime) || tTime > refTime) {
+      return false;
+    }
+    const tParts = getLocalDateParts(tDate, timeZone);
+    return tParts.year === refParts.year && tParts.month === refParts.month;
+  });
+}
+
+/**
+ * Returns the 1.5%-of-monthly-budget threshold (in integer minor units) used to
+ * classify painless micro-taps for Cashless Numbness and Dojo Pain-of-Paying mirrors.
+ */
+export function getCashlessMicroThresholdMinor(monthlyBudgetMinor: number): number {
+  return Math.max(1, Math.round(monthlyBudgetMinor * 0.015));
+}
+
+/**
  * Daily Runway calculation.
  * Safe to spend today = max(0, consumption_budget - month_to_date_consumption) / days_remaining_in_month
  * Calendar month boundaries are evaluated in the user's local timezone.
@@ -171,27 +203,15 @@ export function calculateDailyRunway(
   const daysRemainingInMonth = Math.max(1, daysInMonth - currentDayOfMonth + 1);
 
   // Filter transactions that fall within current calendar month up to reference date
-  let monthToDateConsumptionMinor = 0;
-  let monthToDateSelfInvestMinor = 0;
-
-  for (const t of transactions) {
-    const tDate = new Date(t.loggedAt);
-    const tParts = getLocalDateParts(tDate, timeZone);
-
-    // A ledger may legitimately contain planned/future rows. They remain visible,
-    // but cannot reduce a runway before their instant has arrived.
-    if (
-      tDate.getTime() <= referenceDate.getTime() &&
-      tParts.year === refParts.year &&
-      tParts.month === refParts.month
-    ) {
-      if (t.triggerTag === "invest_self") {
-        monthToDateSelfInvestMinor += t.amountMinor;
-      } else {
-        monthToDateConsumptionMinor += t.amountMinor;
-      }
-    }
-  }
+  const mtdTransactions = filterCurrentMonthTransactionsToDate(
+    transactions,
+    referenceDate,
+    timeZone
+  );
+  const {
+    investSelfTotalMinor: monthToDateSelfInvestMinor,
+    consumptionTotalMinor: monthToDateConsumptionMinor,
+  } = categorizeTransactions(mtdTransactions);
 
   const remainingConsumptionMinor = Math.max(
     0,
@@ -314,7 +334,7 @@ export function detectCashlessNumbness(
   const { consumption, consumptionTotalMinor } =
     categorizeTransactions(transactions);
 
-  const microThresholdMinor = Math.max(1, Math.round(monthlyBudgetMinor * 0.015));
+  const microThresholdMinor = getCashlessMicroThresholdMinor(monthlyBudgetMinor);
 
   let microCount = 0;
   let microAmountMinor = 0;

@@ -9,6 +9,8 @@
  * - Completely isolated from authenticated user data.
  */
 
+import { createGuestSeededDojoProgress } from "@/domain/dojo-engine";
+import type { DojoProgress } from "@/domain/dojo-types";
 import { createInitialGuestState, type GuestSeedState } from "@/domain/seed-data";
 import type {
   CreateFixedCommitmentInput,
@@ -26,7 +28,7 @@ import type {
   VaultPurchaseResult,
   WeeklyNudge,
 } from "@/domain/types";
-import { createFixedCommitmentSchema } from "@/lib/schemas";
+import { createFixedCommitmentSchema, dojoProgressSchema } from "@/lib/schemas";
 import type { IStopBucksRepository } from "./repository.interface";
 
 const GUEST_STORAGE_KEY = "stopbucks_guest_sandbox_v1";
@@ -35,16 +37,36 @@ interface GuestStoragePayload {
   version: 1;
   state: GuestSeedState;
   weeklyNudges: Record<string, WeeklyNudge>;
+  dojoProgress?: DojoProgress;
+}
+
+function cloneDojoProgress(progress: DojoProgress): DojoProgress {
+  return {
+    ...progress,
+    completedLevels: progress.completedLevels.map((entry) => ({ ...entry })),
+    unlockedBadges: [...progress.unlockedBadges],
+  };
 }
 
 export class GuestSandboxRepository implements IStopBucksRepository {
   public readonly isGuest = true;
   private inMemoryCache: GuestStoragePayload | null = null;
 
-  constructor() {
+  constructor(private readonly timeZone?: string) {
     // If in browser, initialize or load cache
     if (typeof window !== "undefined") {
       this.inMemoryCache = this.loadFromStorage();
+    }
+  }
+
+  private resolveTimeZone(): string {
+    if (this.timeZone && this.timeZone.trim().length > 0) {
+      return this.timeZone;
+    }
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
     }
   }
 
@@ -53,10 +75,12 @@ export class GuestSandboxRepository implements IStopBucksRepository {
   }
 
   private getFreshInitialState(): GuestStoragePayload {
+    const now = new Date();
     return {
       version: 1,
-      state: createInitialGuestState(),
+      state: createInitialGuestState(now),
       weeklyNudges: {},
+      dojoProgress: createGuestSeededDojoProgress(now, this.resolveTimeZone()),
     };
   }
 
@@ -75,8 +99,23 @@ export class GuestSandboxRepository implements IStopBucksRepository {
 
       const parsed = JSON.parse(raw) as GuestStoragePayload;
       if (parsed && parsed.version === 1 && parsed.state && parsed.state.profile) {
+        let mutated = false;
         if (!Array.isArray(parsed.state.fixedCommitments)) {
           parsed.state.fixedCommitments = createInitialGuestState().fixedCommitments;
+          mutated = true;
+        }
+        const parsedDojo = dojoProgressSchema.safeParse(parsed.dojoProgress);
+        if (!parsedDojo.success) {
+          parsed.dojoProgress = createGuestSeededDojoProgress(
+            new Date(),
+            this.resolveTimeZone()
+          );
+          mutated = true;
+        } else {
+          parsed.dojoProgress = parsedDojo.data as DojoProgress;
+        }
+        if (mutated) {
+          this.saveToStorage(parsed);
         }
         return parsed;
       }
@@ -359,6 +398,7 @@ export class GuestSandboxRepository implements IStopBucksRepository {
 
     // Single write derived from a copy: both changes commit together or neither does.
     const nextPayload: GuestStoragePayload = {
+      ...payload,
       version: 1,
       state: {
         ...payload.state,
@@ -459,6 +499,31 @@ export class GuestSandboxRepository implements IStopBucksRepository {
       (item) => item.id !== id
     );
     this.saveToStorage(payload);
+  }
+
+  // Dojo Learning Progression Methods
+  async getDojoProgress(): Promise<DojoProgress> {
+    const payload = this.getState();
+    const parsed = dojoProgressSchema.safeParse(payload.dojoProgress);
+    if (!parsed.success) {
+      const seeded = createGuestSeededDojoProgress(
+        new Date(),
+        this.resolveTimeZone()
+      );
+      payload.dojoProgress = seeded;
+      this.saveToStorage(payload);
+      return cloneDojoProgress(seeded);
+    }
+    return cloneDojoProgress(parsed.data as DojoProgress);
+  }
+
+  async saveDojoProgress(progress: DojoProgress): Promise<DojoProgress> {
+    const validated = dojoProgressSchema.parse(progress) as DojoProgress;
+    const payload = this.getState();
+    const cloned = cloneDojoProgress(validated);
+    payload.dojoProgress = cloned;
+    this.saveToStorage(payload);
+    return cloneDojoProgress(cloned);
   }
 
   // Guest Sandbox Reset

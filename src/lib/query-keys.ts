@@ -12,4 +12,6 @@ export const queryKeys = {
     ["fixed-commitments", identity.mode, identity.userId] as const,
   weeklyNudge: (identity: CacheIdentity, weekKey: string) =>
     ["weekly-nudge", identity.mode, identity.userId, weekKey] as const,
+  dojoProgress: (identity: CacheIdentity) =>
+    ["dojo-progress", identity.mode, identity.userId] as const,
 };

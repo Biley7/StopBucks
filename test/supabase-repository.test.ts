@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { createInitialDojoProgress } from "@/domain/dojo-engine";
 import {
   SupabaseRepository,
+  mapDojoProgressRow,
   mapProfileRow,
   mapTransactionRow,
   mapVaultItemRow,
@@ -221,5 +223,205 @@ describe("SupabaseRepository (SEC-005, PERF-001, SEC-003)", () => {
     ).rejects.toThrow(
       "Purchased resolutions must use resolveVaultPurchase() so the transaction stays in sync."
     );
+  });
+});
+
+describe("Phase 5A: SupabaseRepository Dojo Progress & Row Validation", () => {
+  const validDojoRow = {
+    user_id: "u-dojo-1",
+    completed_levels: [
+      {
+        levelId: 1,
+        bestAccuracyPct: 100,
+        earnedXp: 120,
+        completedAt: "2026-11-25T10:00:00+00:00",
+        replayCount: 0,
+      },
+    ],
+    total_xp: 120,
+    current_streak: 1,
+    longest_streak: 2,
+    last_completed_date: "2026-11-25",
+    unlocked_badges: ["planners_shield"],
+    sound_muted: false,
+    updated_at: "2026-11-25T10:00:00+00:00",
+  };
+
+  it("maps valid dojo_progress rows correctly", () => {
+    const mapped = mapDojoProgressRow(validDojoRow);
+    expect(mapped.totalXp).toBe(120);
+    expect(mapped.currentStreak).toBe(1);
+    expect(mapped.longestStreak).toBe(2);
+    expect(mapped.lastCompletedDate).toBe("2026-11-25");
+    expect(mapped.unlockedBadges).toEqual(["planners_shield"]);
+    expect(mapped.soundMuted).toBe(false);
+    expect(mapped.completedLevels).toHaveLength(1);
+  });
+
+  it("rejects corrupted JSON, invalid XP, and invalid level completions", () => {
+    // Non-array JSON for completed_levels
+    expect(() =>
+      mapDojoProgressRow({
+        ...validDojoRow,
+        completed_levels: "not-an-array",
+      })
+    ).toThrow("Invalid dojo progress data received from database.");
+
+    // Negative / non-integer XP
+    expect(() =>
+      mapDojoProgressRow({
+        ...validDojoRow,
+        total_xp: -10,
+      })
+    ).toThrow();
+    expect(() =>
+      mapDojoProgressRow({
+        ...validDojoRow,
+        total_xp: 12.5,
+      })
+    ).toThrow();
+
+    // Out-of-range level ID (10)
+    expect(() =>
+      mapDojoProgressRow({
+        ...validDojoRow,
+        completed_levels: [
+          {
+            levelId: 10,
+            bestAccuracyPct: 100,
+            earnedXp: 100,
+            completedAt: "2026-11-25T10:00:00Z",
+            replayCount: 0,
+          },
+        ],
+      })
+    ).toThrow();
+
+    // Invalid calendar date in last_completed_date
+    expect(() =>
+      mapDojoProgressRow({
+        ...validDojoRow,
+        last_completed_date: "2026-02-31",
+      })
+    ).toThrow();
+  });
+
+  it("returns initial progress without writes when no dojo_progress row exists", async () => {
+    const mockGetUser = vi.fn();
+    const mockMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const mockUpsert = vi.fn();
+    const mockFrom = vi.fn().mockReturnValue({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: mockMaybeSingle,
+        }),
+      }),
+      upsert: mockUpsert,
+    });
+
+    const mockClient = {
+      auth: { getUser: mockGetUser },
+      from: mockFrom,
+    } as unknown as SupabaseClient;
+
+    const repo = new SupabaseRepository(mockClient, "fixed-dojo-u1");
+    const progress = await repo.getDojoProgress();
+
+    expect(progress).toEqual(createInitialDojoProgress());
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockFrom).toHaveBeenCalledWith("dojo_progress");
+  });
+
+  it("upserts dojo progress with onConflict: user_id and returns mapped result", async () => {
+    let capturedPayload: unknown = null;
+    let capturedOptions: unknown = null;
+
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { ...validDojoRow, user_id: "fixed-dojo-u1" },
+      error: null,
+    });
+    const mockUpsert = vi.fn().mockImplementation((payload, options) => {
+      capturedPayload = payload;
+      capturedOptions = options;
+      return { select: () => ({ single: mockSingle }) };
+    });
+
+    const mockClient = {
+      from: vi.fn().mockReturnValue({ upsert: mockUpsert }),
+    } as unknown as SupabaseClient;
+
+    const repo = new SupabaseRepository(mockClient, "fixed-dojo-u1");
+    const saved = await repo.saveDojoProgress({
+      completedLevels: [
+        {
+          levelId: 1,
+          bestAccuracyPct: 100,
+          earnedXp: 120,
+          completedAt: "2026-11-25T10:00:00+00:00",
+          replayCount: 0,
+        },
+      ],
+      totalXp: 120,
+      currentStreak: 1,
+      longestStreak: 2,
+      lastCompletedDate: "2026-11-25",
+      unlockedBadges: ["planners_shield"],
+      soundMuted: false,
+      updatedAt: "2026-11-25T10:00:00+00:00",
+    });
+
+    expect(capturedOptions).toEqual({ onConflict: "user_id" });
+    expect(capturedPayload).toMatchObject({
+      user_id: "fixed-dojo-u1",
+      total_xp: 120,
+      sound_muted: false,
+    });
+    expect(saved.totalXp).toBe(120);
+  });
+
+  it("sanitizes database failures on dojo reads and saves", async () => {
+    const failingClient = {
+      from: vi.fn().mockReturnValue({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: "42501", message: "permission denied for schema public" },
+            }),
+          }),
+        }),
+        upsert: () => ({
+          select: () => ({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: { code: "23514", message: "violates check constraint dojo_xp" },
+            }),
+          }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+
+    const repo = new SupabaseRepository(failingClient, "fixed-dojo-u1");
+    await expect(repo.getDojoProgress()).rejects.toThrow(
+      "Unable to fetch dojo progress. Please try again."
+    );
+    await expect(
+      repo.saveDojoProgress(createInitialDojoProgress())
+    ).rejects.toThrow("Unable to save dojo progress. Please try again.");
+  });
+
+  it("rejects invalid Dojo progress on saveDojoProgress before calling Supabase", async () => {
+    const mockFrom = vi.fn();
+    const mockClient = { from: mockFrom } as unknown as SupabaseClient;
+    const repo = new SupabaseRepository(mockClient, "fixed-dojo-u1");
+
+    await expect(
+      repo.saveDojoProgress({
+        ...createInitialDojoProgress(),
+        totalXp: -50,
+      })
+    ).rejects.toThrow();
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 });

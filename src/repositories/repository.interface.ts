@@ -7,6 +7,7 @@
  * the user is a guest or authenticated.
  */
 
+import type { DojoProgress } from "@/domain/dojo-types";
 import type {
   CreateFixedCommitmentInput,
   CreateProfileInput,
@@ -65,6 +66,10 @@ export interface IStopBucksRepository {
   // Weekly Nudges
   getWeeklyNudge(weekKey: string): Promise<WeeklyNudge | null>;
   saveWeeklyNudge(input: SaveWeeklyNudgeInput): Promise<WeeklyNudge>;
+
+  // Dojo Learning Progression
+  getDojoProgress(): Promise<DojoProgress>;
+  saveDojoProgress(progress: DojoProgress): Promise<DojoProgress>;
 
   // Guest Sandbox Demo Control
   resetDemo(): Promise<void>;
