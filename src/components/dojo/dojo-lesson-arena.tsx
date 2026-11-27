@@ -77,6 +77,23 @@ const BEAT_LABELS: Record<DojoArenaBeat, string> = {
 
 const MAX_FOCUS_SHIELDS = 3;
 
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tagName = target.tagName;
+  if (tagName === "TEXTAREA" || tagName === "SELECT") return true;
+  if (tagName === "INPUT") {
+    const inputType = (target as HTMLInputElement).type?.toLowerCase();
+    return inputType !== "button" && inputType !== "submit" && inputType !== "reset";
+  }
+  return false;
+}
+
+function hasBlockingExternalDialog(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.querySelector('[role="dialog"]:not([data-dojo-arena="true"])') !== null;
+}
+
 export interface DojoLessonArenaProps {
   levelId: DojoLevelId;
   progress: DojoProgress;
@@ -154,19 +171,47 @@ export function DojoLessonArena({
   const victorySoundPlayedRef = useRef(false);
   const mutedRef = useRef(progress.soundMuted);
   const arenaDialogRef = useRef<HTMLDivElement | null>(null);
+  const exitButtonRef = useRef<HTMLButtonElement | null>(null);
+  const keepTrainingButtonRef = useRef<HTMLButtonElement | null>(null);
+  const prevConfirmOpenRef = useRef(false);
+  const lastContinuedFeedbackRef = useRef<LessonFeedbackState | null>(null);
 
   useEffect(() => {
     mutedRef.current = progress.soundMuted;
   }, [progress.soundMuted]);
+
+  // Reset one-shot continue guard when feedback tray closes or changes
+  useEffect(() => {
+    if (!feedbackState?.open) {
+      lastContinuedFeedbackRef.current = null;
+    }
+  }, [feedbackState]);
 
   // Focus container on arena launch for accessible keyboard navigation
   useEffect(() => {
     arenaDialogRef.current?.focus();
   }, []);
 
+  // Manage focus cleanly when the exit confirmation dialog opens and closes
+  useEffect(() => {
+    if (confirmExitOpen) {
+      keepTrainingButtonRef.current?.focus();
+    } else if (prevConfirmOpenRef.current) {
+      exitButtonRef.current?.focus();
+    }
+    prevConfirmOpenRef.current = confirmExitOpen;
+  }, [confirmExitOpen]);
+
   const wrongCount = score.totalQuestions - score.correctCount;
   const remainingShields = Math.max(0, MAX_FOCUS_SHIELDS - wrongCount);
   const currentBeatIndex = BEAT_ORDER.indexOf(beat);
+
+  const triggerFeedbackContinue = useCallback(() => {
+    if (!feedbackState?.open) return;
+    if (lastContinuedFeedbackRef.current === feedbackState) return;
+    lastContinuedFeedbackRef.current = feedbackState;
+    feedbackState.onContinue();
+  }, [feedbackState]);
 
   const handleRequestExit = useCallback(() => {
     const hasMeaningfulProgress =
@@ -180,19 +225,75 @@ export function DojoLessonArena({
     }
   }, [beat, onExitToMap]);
 
-  // Escape key handling
+  // Scoped Arena keyboard ergonomics: Escape (exit/close confirm) and Enter (Continue when feedback tray is open)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (confirmExitOpen) {
-        setConfirmExitOpen(false);
+      if (event.defaultPrevented || event.repeat) return;
+      if (hasBlockingExternalDialog()) return;
+
+      const target = event.target;
+      const isExternalElement =
+        target instanceof Element &&
+        target !== document.body &&
+        target !== document.documentElement &&
+        !arenaDialogRef.current?.contains(target);
+
+      if (isExternalElement) {
         return;
       }
-      handleRequestExit();
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (confirmExitOpen) {
+          setConfirmExitOpen(false);
+        } else {
+          handleRequestExit();
+        }
+        return;
+      }
+
+      if (
+        event.key === "Enter" &&
+        feedbackState?.open &&
+        !confirmExitOpen &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        !event.shiftKey
+      ) {
+        if (isEditableKeyboardTarget(target)) return;
+
+        if (target instanceof HTMLElement) {
+          const interactive = target.closest(
+            'button, a[href], [role="button"], [role="link"]'
+          );
+          if (interactive instanceof HTMLElement) {
+            const isDisabled =
+              interactive.hasAttribute("disabled") ||
+              interactive.getAttribute("aria-disabled") === "true";
+            const isContinueButton = interactive.hasAttribute("data-dojo-continue");
+            // Preserve native Enter behavior on other enabled controls (e.g. Mute, Exit)
+            if (!isDisabled && !isContinueButton) {
+              return;
+            }
+          }
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        triggerFeedbackContinue();
+      }
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmExitOpen, handleRequestExit]);
+  }, [
+    confirmExitOpen,
+    feedbackState,
+    handleRequestExit,
+    triggerFeedbackContinue,
+  ]);
 
   const handleScoredAnswer = useCallback((isCorrect: boolean) => {
     const nextTotal = scoreRef.current.totalQuestions + 1;
@@ -340,14 +441,16 @@ export function DojoLessonArena({
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
+      data-dojo-arena="true"
       aria-label={`StopBucks Dojo Training Arena: Level ${level.id} — ${level.title}`}
-      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-slate-50 text-slate-900 outline-none"
+      className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-900 outline-none"
     >
       {/* Top Sticky Arena HUD */}
       <header className="shrink-0 border-b border-slate-200 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 sm:gap-4">
           {/* Exit Control */}
           <Button
+            ref={exitButtonRef}
             type="button"
             variant="ghost"
             size="icon"
@@ -494,7 +597,14 @@ export function DojoLessonArena({
       </header>
 
       {/* Main Scrollable Lesson Stage */}
-      <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-8">
+      <main
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 sm:px-6 sm:pt-8",
+          feedbackState?.open
+            ? "pb-12 sm:pb-12"
+            : "pb-[max(3rem,calc(env(safe-area-inset-bottom)+2rem))] sm:pb-12"
+        )}
+      >
         <div className="mx-auto w-full max-w-2xl space-y-5">
           {/* Compact Level Title Subheader on Active Beats */}
           {beat !== "victory" && (
@@ -660,6 +770,9 @@ export function DojoLessonArena({
               onStartNextLevel={onStartNextLevel}
             />
           )}
+
+          {/* Extra bottom clearance so choices and buttons scroll comfortably above docked feedback tray */}
+          <div className="h-3 shrink-0" aria-hidden="true" />
         </div>
       </main>
 
@@ -671,7 +784,7 @@ export function DojoLessonArena({
           headline={feedbackState.headline}
           explanation={feedbackState.explanation}
           continueLabel={feedbackState.continueLabel}
-          onContinue={feedbackState.onContinue}
+          onContinue={triggerFeedbackContinue}
         />
       )}
 
@@ -712,6 +825,7 @@ export function DojoLessonArena({
                   Exit to Map
                 </Button>
                 <Button
+                  ref={keepTrainingButtonRef}
                   type="button"
                   onClick={() => setConfirmExitOpen(false)}
                   className="border-b-[3px] border-b-sky-800 bg-sky-600 font-semibold text-white hover:bg-sky-500"

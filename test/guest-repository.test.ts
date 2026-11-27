@@ -189,6 +189,55 @@ describe("Phase 5A: Guest Sandbox Dojo Progression Persistence", () => {
     expect((await secondRepo.getProfile())?.monthlyBudgetMinor).toBe(2000000);
   });
 
+  it("clears accumulated XP, extra levels, badges, and soundMuted on resetDemo across reconstruction", async () => {
+    const store = new Map<string, string>();
+    (globalThis as { window?: unknown }).window = {
+      sessionStorage: {
+        getItem: (key: string) => store.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          store.set(key, value);
+        },
+        removeItem: (key: string) => {
+          store.delete(key);
+        },
+      },
+    };
+
+    const repo = new GuestSandboxRepository("UTC");
+    let progress = await repo.getDojoProgress();
+    for (const id of [2, 3] as const) {
+      progress = applyDojoLevelCompletion(progress, {
+        levelId: id,
+        correctCount: 5,
+        totalQuestions: 5,
+        localDateKey: progress.lastCompletedDate ?? "2026-11-26",
+        nowIso: "2026-11-26T14:00:00.000Z",
+      }).nextProgress;
+    }
+    await repo.saveDojoProgress({ ...progress, soundMuted: true });
+
+    await repo.resetDemo();
+
+    const reconstructed = new GuestSandboxRepository("UTC");
+    const resetProgress = await reconstructed.getDojoProgress();
+
+    expect(resetProgress.totalXp).toBe(120);
+    expect(resetProgress.currentStreak).toBe(1);
+    expect(resetProgress.longestStreak).toBe(1);
+    expect(resetProgress.soundMuted).toBe(false);
+    expect(resetProgress.unlockedBadges).toEqual(["planners_shield"]);
+    expect(resetProgress.completedLevels).toHaveLength(1);
+    expect(resetProgress.completedLevels[0]).toMatchObject({
+      levelId: 1,
+      bestAccuracyPct: 100,
+      earnedXp: 120,
+      replayCount: 0,
+    });
+    expect(getLevelStatus(1, resetProgress)).toBe("completed");
+    expect(getLevelStatus(2, resetProgress)).toBe("active");
+    expect(getLevelStatus(3, resetProgress)).toBe("locked");
+  });
+
   it("preserves Dojo progress when resolving a Vault purchase", async () => {
     const repo = new GuestSandboxRepository("UTC");
     const seeded = await repo.getDojoProgress();

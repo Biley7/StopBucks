@@ -4,18 +4,24 @@ import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
+import { LogOut, Swords } from "lucide-react";
 import { useRepository } from "@/repositories/repository-provider";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PainOfPayingToggle } from "./pain-of-paying-toggle";
 import { NAV_ITEMS } from "./app-sidebar";
 
+export function isDojoPathname(pathname: string | null | undefined): boolean {
+  if (typeof pathname !== "string") return false;
+  return pathname === "/dojo" || pathname.startsWith("/dojo/");
+}
+
 export function AppTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isGuest, exitGuestMode } = useRepository();
+  const isDojoRoute = isDojoPathname(pathname);
   const currentNav = NAV_ITEMS.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
@@ -49,9 +55,20 @@ export function AppTopbar() {
         </div>
       </div>
 
-      {/* Global Pain-of-Paying Toggle and Mobile Session Controls */}
+      {/* Route-Aware Right Controls: Dojo Mode pill on /dojo, Pain-of-Paying Switcher elsewhere */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <PainOfPayingToggle />
+        {isDojoRoute ? (
+          <div
+            role="status"
+            aria-label="Dojo Mode active — behavioral finance training hub"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-white shadow-xs"
+          >
+            <Swords className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-hidden="true" />
+            <span className="whitespace-nowrap">Dojo Mode</span>
+          </div>
+        ) : (
+          <PainOfPayingToggle />
+        )}
         <Button
           variant="outline"
           size="sm"

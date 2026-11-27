@@ -9,6 +9,7 @@ import type { DojoLevelId } from "@/domain/dojo-types";
 import {
   DOJO_S_CURVE_LANES,
   buildDojoSkillMapLayout,
+  getActiveDojoLevel,
   getDojoConnectorState,
   getDojoWorldCompletionStats,
 } from "@/lib/dojo-map-layout";
@@ -83,6 +84,29 @@ describe("Phase 5B: Deterministic 9-Level S-Curve Map Layout", () => {
     // World 3 banner sits strictly between Level 6 and Level 7
     expect(w3BannerY!).toBeGreaterThan(layout.nodes[5].yPx);
     expect(w3BannerY!).toBeLessThan(layout.nodes[6].yPx);
+
+    // Every node carries deterministic shared label anchor & button geometry
+    for (const node of layout.nodes) {
+      expect(node.halfButtonPx).toBe(node.isBoss ? 37 : 32);
+      expect(node.labelOffsetPx).toBe(node.halfButtonPx + 16);
+      if (node.lane === -1) expect(node.labelAnchor).toBe("right");
+      if (node.lane === 1) expect(node.labelAnchor).toBe("left");
+      if (node.lane === 0) expect(node.labelAnchor).toBe("below");
+    }
+  });
+
+  it("identifies the active level via getActiveDojoLevel and returns null when all 9 are completed", () => {
+    const initial = createInitialDojoProgress();
+    expect(getActiveDojoLevel(initial)?.id).toBe(1);
+
+    const guest = createGuestSeededDojoProgress(
+      new Date("2026-11-26T12:00:00.000Z"),
+      "UTC"
+    );
+    expect(getActiveDojoLevel(guest)?.id).toBe(2);
+
+    const completedAll = completeLevelsUpTo(9);
+    expect(getActiveDojoLevel(completedAll)).toBeNull();
   });
 });
 

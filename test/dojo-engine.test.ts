@@ -574,4 +574,57 @@ describe("Phase 5A: Pure Interactive Mechanic Simulation Helpers", () => {
     expect(userAKey).not.toEqual(userBKey);
     expect(guestKey).not.toEqual(userAKey);
   });
+
+  it("completes all 9 curriculum levels sequentially with accurate XP, Black Belt rank, and replay protection", () => {
+    let progress = createInitialDojoProgress("2026-11-01T08:00:00.000Z");
+    let expectedTotalXp = 0;
+
+    for (const level of DOJO_LEVELS) {
+      const scoredMechanicCount =
+        level.mechanic.kind === "impulse_duel"
+          ? level.mechanic.rounds?.length ?? 1
+          : level.mechanic.kind === "bucket_sort"
+            ? level.mechanic.items.length
+            : level.mechanic.kind === "feedback_loop"
+              ? level.mechanic.steps.length
+              : 1;
+      const totalQuestions = 1 + scoredMechanicCount + level.masteryQuestions.length;
+
+      const res = applyDojoLevelCompletion(progress, {
+        levelId: level.id,
+        correctCount: totalQuestions,
+        totalQuestions,
+        localDateKey: `2026-11-${String(level.id).padStart(2, "0")}`,
+        nowIso: `2026-11-${String(level.id).padStart(2, "0")}T12:00:00.000Z`,
+      });
+
+      expectedTotalXp += level.baseXp + level.perfectBonusXp;
+      expect(res.accuracyPct).toBe(100);
+      expect(res.isFirstCompletion).toBe(true);
+      expect(res.newlyUnlockedBadgeId).toBe(level.badgeId);
+      progress = res.nextProgress;
+    }
+
+    expect(progress.completedLevels).toHaveLength(9);
+    expect(progress.unlockedBadges).toHaveLength(9);
+    expect(progress.totalXp).toBe(expectedTotalXp);
+    expect(getDojoRank(progress.totalXp).belt).toBe("Black Belt");
+    expect(getDojoRank(progress.totalXp).nextBeltXp).toBeNull();
+
+    // Replaying Level 9 with a lower score preserves 100% bestAccuracyPct and grants 0 XP
+    const l9Replay = applyDojoLevelCompletion(progress, {
+      levelId: 9,
+      correctCount: 2,
+      totalQuestions: 5,
+      localDateKey: "2026-11-10",
+      nowIso: "2026-11-10T12:00:00.000Z",
+    });
+    expect(l9Replay.accuracyPct).toBe(40);
+    expect(l9Replay.xpAwarded).toBe(0);
+    expect(l9Replay.nextProgress.totalXp).toBe(expectedTotalXp);
+    expect(
+      l9Replay.nextProgress.completedLevels.find((c) => c.levelId === 9)
+        ?.bestAccuracyPct
+    ).toBe(100);
+  });
 });

@@ -80,7 +80,7 @@ export function DojoLevelNode({
     return <Play className="h-6 w-6 fill-current translate-x-0.5" aria-hidden="true" />;
   };
 
-  const halfButtonPx = level.isBoss ? 37 : 32;
+  const { halfButtonPx, labelAnchor, labelOffsetPx } = position;
   const buttonSizeClass = level.isBoss ? "h-[74px] w-[74px]" : "h-16 w-16";
 
   const buttonSurfaceClass = isCompleted
@@ -92,6 +92,27 @@ export function DojoLevelNode({
         ? "bg-slate-900 border-2 border-amber-400/80 border-b-[5px] border-b-slate-950 text-amber-300 hover:bg-slate-800 ring-4 ring-amber-200/80"
         : "bg-sky-600 border-2 border-sky-700 border-b-[5px] border-b-sky-800 text-white hover:bg-sky-500 ring-4 ring-sky-200"
       : "bg-slate-100 border-2 border-slate-200 border-b-[5px] border-b-slate-300 text-slate-400 cursor-not-allowed";
+
+  const labelPositionStyle: React.CSSProperties =
+    labelAnchor === "below"
+      ? { top: `${labelOffsetPx}px` }
+      : labelAnchor === "right"
+        ? { left: `${labelOffsetPx}px`, top: "0px" }
+        : { right: `${labelOffsetPx}px`, top: "0px" };
+
+  const labelPositionClass =
+    labelAnchor === "below"
+      ? "left-0 w-[204px] -translate-x-1/2 text-center sm:w-[232px]"
+      : labelAnchor === "right"
+        ? "w-[188px] -translate-y-1/2 text-left sm:w-[228px]"
+        : "w-[188px] -translate-y-1/2 text-right sm:w-[228px]";
+
+  const labelRowJustifyClass =
+    labelAnchor === "below"
+      ? "justify-center"
+      : labelAnchor === "right"
+        ? "justify-start"
+        : "justify-end";
 
   return (
     <div
@@ -107,7 +128,7 @@ export function DojoLevelNode({
         {(isActive || bossLabel) && (
           <div
             style={{ bottom: `${halfButtonPx + 10}px` }}
-            className="pointer-events-none absolute left-0 flex -translate-x-1/2 flex-col items-center gap-1"
+            className="pointer-events-none absolute left-0 z-20 flex -translate-x-1/2 flex-col items-center gap-1"
           >
             {isActive && (
               <span className="whitespace-nowrap rounded-full border border-sky-200 bg-white px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-sky-700 uppercase shadow-xs">
@@ -133,7 +154,7 @@ export function DojoLevelNode({
 
         {/* Active subtle animated ring (disabled under reduced motion) */}
         {isActive && !shouldReduceMotion && (
-          <div className="pointer-events-none absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">
+          <div className="pointer-events-none absolute left-0 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
             <motion.span
               aria-hidden="true"
               initial={{ scale: 0.96, opacity: 0.55 }}
@@ -154,7 +175,7 @@ export function DojoLevelNode({
         )}
 
         {/* Tactile Node Button centered directly on anchor point */}
-        <div className="absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute left-0 top-0 z-20 -translate-x-1/2 -translate-y-1/2">
           <motion.button
             type="button"
             disabled={isLocked}
@@ -194,20 +215,29 @@ export function DojoLevelNode({
 
           {/* Accuracy pill on completed nodes when real accuracy data exists */}
           {hasValidAccuracy && (
-            <span className="pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800 shadow-xs">
+            <span className="pointer-events-none absolute -bottom-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800 shadow-xs">
               {completionRecord.bestAccuracyPct}%
             </span>
           )}
         </div>
 
-        {/* Node Caption beneath the button */}
+        {/* Opaque High-Contrast Level Label Card positioned from shared layout geometry */}
         <div
-          style={{
-            top: `${halfButtonPx + 14}px`,
-          }}
-          className="pointer-events-none absolute left-0 w-[136px] -translate-x-1/2 text-center sm:w-[172px]"
+          data-label-anchor={labelAnchor}
+          data-testid={`dojo-node-label-${level.id}`}
+          style={labelPositionStyle}
+          className={cn(
+            "pointer-events-none absolute z-20 rounded-xl border border-slate-200/80 bg-white/95 px-3 py-1.5 shadow-xs backdrop-blur-sm",
+            isActive && "ring-1 ring-sky-200/80",
+            labelPositionClass
+          )}
         >
-          <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          <div
+            className={cn(
+              "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500",
+              labelRowJustifyClass
+            )}
+          >
             <span>Level {level.id}</span>
             <span aria-hidden="true">·</span>
             <span
@@ -226,13 +256,22 @@ export function DojoLevelNode({
           <p
             className={cn(
               "mt-0.5 line-clamp-2 text-xs font-semibold leading-tight",
-              isLocked ? "text-slate-500" : "text-slate-900"
+              isLocked ? "text-slate-600" : "text-slate-900"
             )}
           >
             {level.title}
           </p>
 
-          <div className="mt-0.5 text-[11px] font-semibold tabular-nums text-slate-600">
+          <div
+            className={cn(
+              "mt-0.5 text-[11px] font-semibold tabular-nums text-slate-600",
+              labelAnchor === "below"
+                ? "text-center"
+                : labelAnchor === "right"
+                  ? "text-left"
+                  : "text-right"
+            )}
+          >
             +{level.baseXp} XP
           </div>
 

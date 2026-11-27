@@ -38,15 +38,21 @@ export function LessonFeedbackTray({
 
   useEffect(() => {
     if (!open) return;
+    const focusContinue = () => {
+      try {
+        continueButtonRef.current?.focus({ preventScroll: true });
+      } catch {
+        continueButtonRef.current?.focus();
+      }
+    };
+
     const frame =
       typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
-        ? window.requestAnimationFrame(() => {
-            continueButtonRef.current?.focus();
-          })
+        ? window.requestAnimationFrame(focusContinue)
         : null;
 
     if (frame === null) {
-      continueButtonRef.current?.focus();
+      focusContinue();
     }
 
     return () => {
@@ -63,6 +69,7 @@ export function LessonFeedbackTray({
           key="lesson-feedback-tray"
           role="status"
           aria-live="polite"
+          data-dojo-feedback-tray="true"
           initial={shouldReduceMotion ? { opacity: 1 } : { y: 32, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={shouldReduceMotion ? { opacity: 0 } : { y: 24, opacity: 0 }}
@@ -72,7 +79,7 @@ export function LessonFeedbackTray({
               : { type: "spring", stiffness: 360, damping: 32 }
           }
           className={cn(
-            "shrink-0 border-t-2 px-4 pt-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)] sm:px-6",
+            "shrink-0 border-t-2 px-4 pt-3 pb-[max(0.875rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)] sm:px-6 sm:pt-3.5",
             isCorrect
               ? "border-emerald-300 bg-emerald-50 text-emerald-950"
               : "border-amber-300 bg-amber-50 text-amber-950"
@@ -95,7 +102,7 @@ export function LessonFeedbackTray({
                 )}
               </div>
 
-              <div className="min-w-0 space-y-1">
+              <div className="min-w-0 max-h-[28dvh] flex-1 space-y-1 overflow-y-auto pr-1 sm:max-h-none sm:overflow-visible sm:pr-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={cn(
@@ -107,13 +114,13 @@ export function LessonFeedbackTray({
                   >
                     {isCorrect ? "Correct" : "Review"}
                   </span>
-                  <h3 className="text-sm font-bold tracking-tight sm:text-base">
+                  <h3 className="break-words text-sm font-bold tracking-tight sm:text-base">
                     {headline}
                   </h3>
                 </div>
                 <p
                   className={cn(
-                    "text-xs leading-relaxed sm:text-sm",
+                    "break-words text-xs leading-relaxed sm:text-sm",
                     isCorrect ? "text-emerald-900" : "text-amber-900"
                   )}
                 >
@@ -125,6 +132,7 @@ export function LessonFeedbackTray({
             <Button
               ref={continueButtonRef}
               type="button"
+              data-dojo-continue="true"
               onClick={onContinue}
               className={cn(
                 "h-11 w-full shrink-0 gap-2 border-b-[3px] px-5 text-sm font-bold text-white active:translate-y-px sm:w-auto",

@@ -1173,3 +1173,227 @@ describe("Phase 5C: Full 5-Beat Arena, Domain Integration, Persistence & Navigat
     });
   });
 });
+
+describe("Phase 5D: Training Arena Ergonomics, Keyboard Navigation & Level 9 Integration", () => {
+  it("provides mobile bottom padding and safe-area docked feedback tray without obscuring controls", () => {
+    const guestInitial = createGuestSeededDojoProgress(
+      new Date("2026-11-26T12:00:00.000Z"),
+      "UTC"
+    );
+    const level2 = getDojoLevel(2);
+
+    const { container } = renderWithProviders(
+      <DojoLessonArena
+        levelId={2}
+        progress={guestInitial}
+        profile={null}
+        transactions={[]}
+        fixedCommitments={[]}
+        vaultItems={[]}
+        onToggleMute={vi.fn()}
+        onCompleteProgress={vi.fn(async (n) => n)}
+        onExitToMap={vi.fn()}
+        onStartNextLevel={vi.fn()}
+      />
+    );
+
+    const mainStage = container.querySelector("main");
+    expect(mainStage?.className).toContain("overflow-y-auto");
+    expect(mainStage?.className).toContain("overflow-x-hidden");
+    expect(mainStage?.className).toContain("min-h-0");
+
+    fireEvent.click(screen.getAllByRole("radio")[level2.wager.correctIndex]);
+    const tray = container.querySelector('[data-dojo-feedback-tray="true"]');
+    expect(tray).toBeTruthy();
+    expect(tray?.className).toContain("shrink-0");
+    expect(tray?.className).toContain("safe-area-inset-bottom");
+    expect(mainStage?.className).toContain("pb-12");
+  });
+
+  it("activates Continue on Enter when feedback is open without resubmitting or double-advancing", () => {
+    const guestInitial = createGuestSeededDojoProgress(
+      new Date("2026-11-26T12:00:00.000Z"),
+      "UTC"
+    );
+    const level2 = getDojoLevel(2);
+    const onToggleMute = vi.fn();
+
+    renderWithProviders(
+      <DojoLessonArena
+        levelId={2}
+        progress={guestInitial}
+        profile={null}
+        transactions={[]}
+        fixedCommitments={[]}
+        vaultItems={[]}
+        onToggleMute={onToggleMute}
+        onCompleteProgress={vi.fn(async (n) => n)}
+        onExitToMap={vi.fn()}
+        onStartNextLevel={vi.fn()}
+      />
+    );
+
+    // Enter while feedback tray is closed does nothing
+    fireEvent.keyDown(window, { key: "Enter" });
+    expect(screen.getByText(/Beat 1 · Research Wager/i)).toBeTruthy();
+
+    // Select Beat 1 answer -> tray opens
+    const firstRadio = screen.getAllByRole("radio")[level2.wager.correctIndex];
+    fireEvent.click(firstRadio);
+    expect(screen.getByText("1/1 Correct")).toBeTruthy();
+
+    // Pressing Enter inside an unrelated editable input must be ignored
+    const tempInput = document.createElement("input");
+    tempInput.type = "text";
+    const arenaEl = screen.getByRole("dialog", { name: /Training Arena: Level 2/i });
+    arenaEl.appendChild(tempInput);
+    fireEvent.keyDown(tempInput, { key: "Enter" });
+    expect(screen.getByText(/Beat 1 · Research Wager/i)).toBeTruthy();
+    tempInput.remove();
+
+    // Pressing Enter while focused on Mute button must NOT advance Continue
+    const muteBtn = screen.getByRole("button", { name: /Mute Dojo sound effects/i });
+    fireEvent.keyDown(muteBtn, { key: "Enter" });
+    expect(screen.getByText(/Beat 1 · Research Wager/i)).toBeTruthy();
+
+    // Pressing Enter on Continue or disabled radio advances once to Beat 2 without double-transitioning
+    const continueBtn = screen.getByRole("button", {
+      name: /Start Interactive Drill/i,
+    });
+    fireEvent.keyDown(continueBtn, { key: "Enter" });
+    fireEvent.keyDown(window, { key: "Enter" }); // Rapid second Enter must be a no-op because next tray isn't open
+
+    expect(screen.getByText(/Beat 2 · Interactive Model Lab/i)).toBeTruthy();
+    // Score stayed 1/1 (not resubmitted)
+    expect(screen.getByText("1/1 Correct")).toBeTruthy();
+  });
+
+  it("handles Escape cleanly with focus management and respects external Radix Dialogs", () => {
+    const initial = createInitialDojoProgress();
+    const level1 = getDojoLevel(1);
+    const onExitToMap = vi.fn();
+
+    // 1. No meaningful progress yet -> Escape exits immediately
+    renderWithProviders(
+      <DojoLessonArena
+        levelId={1}
+        progress={initial}
+        profile={null}
+        transactions={[]}
+        fixedCommitments={[]}
+        vaultItems={[]}
+        onToggleMute={vi.fn()}
+        onCompleteProgress={vi.fn(async (n) => n)}
+        onExitToMap={onExitToMap}
+        onStartNextLevel={vi.fn()}
+      />
+    );
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onExitToMap).toHaveBeenCalledTimes(1);
+    onExitToMap.mockClear();
+
+    // 2. Answer Beat 1 -> Escape opens exit confirmation and focuses Keep Training
+    fireEvent.click(screen.getAllByRole("radio")[level1.wager.correctIndex]);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onExitToMap).not.toHaveBeenCalled();
+    expect(screen.getByText(/Leave this training drill\?/i)).toBeTruthy();
+    const keepBtn = screen.getByRole("button", { name: /Keep Training/i });
+    expect(document.activeElement).toBe(keepBtn);
+
+    // 3. Pressing Escape again closes ONLY the exit confirmation and restores focus to Exit button
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByText(/Leave this training drill\?/i)).toBeNull();
+    expect(onExitToMap).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: /Exit training arena/i })
+    );
+
+    // 4. When an external dialog (e.g. Radix Dialog) is present, Arena Escape stays dormant
+    const externalDialog = document.createElement("div");
+    externalDialog.setAttribute("role", "dialog");
+    document.body.appendChild(externalDialog);
+    try {
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByText(/Leave this training drill\?/i)).toBeNull();
+      expect(onExitToMap).not.toHaveBeenCalled();
+    } finally {
+      externalDialog.remove();
+    }
+  });
+
+  it("completes Level 9 end-to-end in the Arena, persists final progress, and never renders Level 10", async () => {
+    const repo = new GuestSandboxRepository("UTC");
+    let progress = await repo.getDojoProgress();
+    for (let id = 2 as DojoLevelId; id <= 8; id = (id + 1) as DojoLevelId) {
+      progress = applyDojoLevelCompletion(progress, {
+        levelId: id,
+        correctCount: 5,
+        totalQuestions: 5,
+        localDateKey: "2026-11-26",
+        nowIso: "2026-11-26T10:00:00.000Z",
+      }).nextProgress;
+    }
+    await repo.saveDojoProgress(progress);
+
+    const level9 = getDojoLevel(9);
+    const seed = createInitialGuestState(new Date("2026-11-26T12:00:00.000Z"));
+    const saveSpy = vi.fn(async (next: DojoProgress) => repo.saveDojoProgress(next));
+    const onExitToMap = vi.fn();
+
+    renderWithProviders(
+      <DojoLessonArena
+        levelId={9}
+        progress={progress}
+        profile={seed.profile}
+        transactions={seed.transactions}
+        fixedCommitments={seed.fixedCommitments}
+        vaultItems={seed.vaultItems}
+        onToggleMute={vi.fn()}
+        onCompleteProgress={saveSpy}
+        onExitToMap={onExitToMap}
+        onStartNextLevel={vi.fn()}
+      />
+    );
+
+    // Beat 1: Research Wager
+    fireEvent.click(screen.getAllByRole("radio")[level9.wager.correctIndex]);
+    fireEvent.click(screen.getByRole("button", { name: /Start Interactive Drill/i }));
+
+    // Beat 2: Laibson hyperbolic_beta slider (target 0.8..1.0)
+    fireEvent.change(screen.getByRole("slider"), { target: { value: "0.8" } });
+    fireEvent.click(screen.getByRole("button", { name: /Lock In Target/i }));
+    fireEvent.click(screen.getByRole("button", { name: /See Live Wallet Mirror/i }));
+
+    // Beat 3: Personal Mirror
+    expect(screen.getByText(/YOUR LIVE WALLET MIRROR/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Got It — Test My Mastery/i }));
+
+    // Beat 4: Mastery Check (3 questions)
+    for (let i = 0; i < level9.masteryQuestions.length; i += 1) {
+      const q = level9.masteryQuestions[i];
+      fireEvent.click(screen.getAllByRole("radio")[q.correctIndex]);
+      const label =
+        i === level9.masteryQuestions.length - 1
+          ? /Complete Drill/i
+          : /Next Question/i;
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    await waitFor(() => {
+      expect(screen.getByText(/All 9 Dojo Drills Mastered/i)).toBeTruthy();
+      expect(screen.getByText(/\+240 XP/)).toBeTruthy();
+    });
+
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Curriculum Complete/i)).toBeTruthy();
+    expect(screen.queryByText(/Start Level 10/i)).toBeNull();
+
+    const persisted = await repo.getDojoProgress();
+    expect(persisted.completedLevels).toHaveLength(9);
+    expect(persisted.unlockedBadges).toContain("golden_egg_crown");
+
+    fireEvent.click(screen.getByRole("button", { name: /Back to Dojo Map/i }));
+    expect(onExitToMap).toHaveBeenCalledTimes(1);
+  });
+});

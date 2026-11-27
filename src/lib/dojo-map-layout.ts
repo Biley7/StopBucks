@@ -16,6 +16,7 @@ import type {
 } from "@/domain/dojo-types";
 
 export type DojoLane = -1 | 0 | 1;
+export type DojoNodeLabelAnchor = "below" | "left" | "right";
 
 export interface DojoMapNodePosition {
   levelId: DojoLevelId;
@@ -27,6 +28,9 @@ export interface DojoMapNodePosition {
   xSvg: number;
   yPx: number;
   isBoss: boolean;
+  halfButtonPx: number;
+  labelAnchor: DojoNodeLabelAnchor;
+  labelOffsetPx: number;
 }
 
 export interface DojoMapConnector {
@@ -85,10 +89,16 @@ const LANE_TO_X_PCT: Record<DojoLane, number> = {
   [1]: 78,
 };
 
-const TOP_NODE_OFFSET_PX = 88;
-const WITHIN_WORLD_STEP_PX = 220;
-const CROSS_WORLD_STEP_PX = 340;
-const BOTTOM_PADDING_PX = 160;
+const TOP_NODE_OFFSET_PX = 104;
+const WITHIN_WORLD_STEP_PX = 250;
+const CROSS_WORLD_STEP_PX = 400;
+const BOTTOM_PADDING_PX = 180;
+
+function laneToLabelAnchor(lane: DojoLane): DojoNodeLabelAnchor {
+  if (lane === -1) return "right";
+  if (lane === 1) return "left";
+  return "below";
+}
 
 function laneToSvgX(lane: DojoLane): number {
   return (LANE_TO_X_PCT[lane] / 100) * DOJO_MAP_VIEWBOX_WIDTH;
@@ -151,8 +161,8 @@ export function buildDojoSkillMapLayout(
         // Place the incoming world banner in the cleared zone between previous label and next node pill
         const prevNodeY = nodes[index - 1].yPx;
         const nextNodeY = prevNodeY + CROSS_WORLD_STEP_PX;
-        const zoneStart = prevNodeY + 144;
-        const zoneEnd = nextNodeY - 72;
+        const zoneStart = prevNodeY + 162;
+        const zoneEnd = nextNodeY - 76;
         const bannerCenter = Math.round((zoneStart + zoneEnd) / 2);
         worldBannerMap.set(level.worldId, bannerCenter);
         currentY = nextNodeY;
@@ -168,6 +178,7 @@ export function buildDojoSkillMapLayout(
     const world = worldMap.get(level.worldId);
     const worldNumber = world?.worldNumber ?? (1 as const);
     const xPct = LANE_TO_X_PCT[lane];
+    const halfButtonPx = level.isBoss ? 37 : 32;
 
     nodes.push({
       levelId: level.id,
@@ -179,6 +190,9 @@ export function buildDojoSkillMapLayout(
       xSvg: laneToSvgX(lane),
       yPx: currentY,
       isBoss: level.isBoss,
+      halfButtonPx,
+      labelAnchor: laneToLabelAnchor(lane),
+      labelOffsetPx: halfButtonPx + 16,
     });
   }
 
@@ -277,4 +291,21 @@ export function getDojoWorldCompletionStats(
   }
 
   return stats;
+}
+
+/**
+ * Resolves the currently active unlocked level strictly from Phase 5A getLevelStatus().
+ * Returns null once all curriculum levels are completed.
+ */
+export function getActiveDojoLevel(
+  progress: DojoProgress,
+  levels: readonly DojoLevel[] = DOJO_LEVELS
+): DojoLevel | null {
+  const orderedLevels = [...levels].sort((a, b) => a.id - b.id);
+  for (const level of orderedLevels) {
+    if (getLevelStatus(level.id, progress) === "active") {
+      return level;
+    }
+  }
+  return null;
 }

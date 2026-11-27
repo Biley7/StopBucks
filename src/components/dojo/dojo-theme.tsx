@@ -65,24 +65,32 @@ export const DOJO_WORLD_STYLES: Record<
   DojoWorldId,
   {
     bannerBorderClass: string;
+    bannerLeftAccentClass: string;
     bannerAccentBg: string;
     worldPillClass: string;
+    progressBarClass: string;
   }
 > = {
   "world-1": {
     bannerBorderClass: "border-amber-200 bg-white",
+    bannerLeftAccentClass: "border-l-4 border-l-amber-500",
     bannerAccentBg: "bg-amber-50 text-amber-900 border-amber-200",
     worldPillClass: "border-amber-200 bg-amber-50 text-amber-800",
+    progressBarClass: "bg-amber-500",
   },
   "world-2": {
     bannerBorderClass: "border-sky-200 bg-white",
+    bannerLeftAccentClass: "border-l-4 border-l-sky-600",
     bannerAccentBg: "bg-sky-50 text-sky-900 border-sky-200",
     worldPillClass: "border-sky-200 bg-sky-50 text-sky-800",
+    progressBarClass: "bg-sky-600",
   },
   "world-3": {
     bannerBorderClass: "border-emerald-200 bg-white",
+    bannerLeftAccentClass: "border-l-4 border-l-emerald-600",
     bannerAccentBg: "bg-emerald-50 text-emerald-900 border-emerald-200",
     worldPillClass: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    progressBarClass: "bg-emerald-600",
   },
 };
 

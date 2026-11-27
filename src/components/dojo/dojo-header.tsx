@@ -48,9 +48,9 @@ export function DojoHeader({
     : `${rank.currentXp} / ${rank.nextBeltXp} XP (${rank.progressPct}%)`;
 
   return (
-    <Card className="border-slate-200/90 bg-white">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <Card className="border-slate-200/90 bg-white shadow-xs">
+      <CardContent className="p-3.5 sm:px-5 sm:py-4">
+        <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
           {/* Belt, Rank, and XP Progress */}
           <div className="min-w-0 flex-1 space-y-3.5">
             <div className="flex flex-wrap items-center gap-2.5">

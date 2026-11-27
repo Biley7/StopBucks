@@ -1,7 +1,10 @@
+// @vitest-environment jsdom
+
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { QueryClient } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { DOJO_LEVELS } from "@/domain/dojo-curriculum";
 import {
   applyDojoLevelCompletion,
@@ -9,6 +12,7 @@ import {
   createInitialDojoProgress,
 } from "@/domain/dojo-engine";
 import type { DojoLevelId, DojoProgress } from "@/domain/dojo-types";
+import { getUniqueDojoCitations } from "@/lib/dojo-citations";
 import { buildDojoSkillMapLayout } from "@/lib/dojo-map-layout";
 import {
   buildSoundToggledProgress,
@@ -17,9 +21,12 @@ import {
 import { queryKeys } from "@/lib/query-keys";
 import { GuestSandboxRepository } from "@/repositories/guest-sandbox.repository";
 
-// Mock Next.js navigation, React Query context hooks, and Radix Dialog Portal for SSR rendering checks
+const mockUsePathname = vi.fn(() => "/dojo");
+let activeMockRepo = new GuestSandboxRepository("UTC");
+
+// Mock Next.js navigation, React Query context hooks, and Radix Dialog Portal for SSR + JSDOM checks
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/dojo",
+  usePathname: () => mockUsePathname(),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -29,15 +36,28 @@ vi.mock("@tanstack/react-query", async () => {
   );
   return {
     ...actual,
-    useQueryClient: () => ({ clear: vi.fn() }),
+    useQueryClient: () => {
+      try {
+        return actual.useQueryClient();
+      } catch {
+        return { clear: vi.fn() };
+      }
+    },
   };
 });
 
 vi.mock("@/repositories/repository-provider", () => ({
   useRepository: () => ({
+    repository: activeMockRepo,
+    cacheIdentity: { mode: "guest", userId: "guest-sandbox-user" } as const,
+    activeMode: "guest" as const,
     isGuest: true,
+    isLoading: false,
     user: null,
+    isSupabaseAvailable: false,
+    enterGuestMode: vi.fn(),
     exitGuestMode: vi.fn(),
+    resetDemo: vi.fn(),
   }),
 }));
 
@@ -52,16 +72,28 @@ vi.mock("@radix-ui/react-dialog", async () => {
   };
 });
 
+import DojoPage from "@/app/(app)/dojo/page";
 import { AppSidebar, NAV_ITEMS } from "@/components/shared/app-sidebar";
-import { MobileBottomNav } from "@/components/shared/app-topbar";
+import { AppTopbar, MobileBottomNav } from "@/components/shared/app-topbar";
 import { DojoHeader } from "@/components/dojo/dojo-header";
 import { DojoLevelNode } from "@/components/dojo/dojo-level-node";
 import { DojoSkillMap } from "@/components/dojo/dojo-skill-map";
+import { DojoSideRail } from "@/components/dojo/dojo-side-rail";
 import { DojoLevelBriefing } from "@/components/dojo/dojo-level-briefing";
 import { DojoTrophyDrawer } from "@/components/dojo/dojo-trophy-drawer";
 import { DojoCitationModal } from "@/components/dojo/dojo-citation-modal";
 import { DojoLessonArena } from "@/components/dojo/dojo-lesson-arena";
 import { DisplayPreferenceProvider } from "@/lib/display-preference-context";
+
+afterEach(() => {
+  cleanup();
+  mockUsePathname.mockReturnValue("/dojo");
+  activeMockRepo = new GuestSandboxRepository("UTC");
+  if (typeof window !== "undefined") {
+    localStorage.clear();
+    sessionStorage.clear();
+  }
+});
 
 describe("Phase 5B: Navigation Integration", () => {
   it("includes all five destinations in order with /dojo as the 5th tab", () => {
@@ -402,5 +434,195 @@ describe("Phase 5B: Sound Preference Optimistic Persistence & Rollback", () => {
     expect(queryClient.getQueryData<DojoProgress>(key)?.soundMuted).toBe(false);
     expect(onErrorSpy).toHaveBeenCalledTimes(1);
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: key });
+  });
+});
+
+describe("Phase 5D: Route-Aware Topbar, Two-Column Hub, Side Rail & Opaque S-Curve Layers", () => {
+  it("hides Pain-of-Paying switcher on /dojo and nested /dojo routes while preserving it elsewhere", () => {
+    for (const dojoPath of ["/dojo", "/dojo/world-1"]) {
+      mockUsePathname.mockReturnValue(dojoPath);
+      const html = renderToStaticMarkup(
+        React.createElement(
+          DisplayPreferenceProvider,
+          null,
+          React.createElement(AppTopbar)
+        )
+      );
+      expect(html).toContain("Dojo Mode");
+      expect(html).not.toContain("Work Hours");
+      expect(html).not.toContain("4-Yr Cost");
+    }
+
+    for (const nonDojoPath of ["/runway", "/log", "/radar", "/vault", "/dojo-unrelated"]) {
+      mockUsePathname.mockReturnValue(nonDojoPath);
+      const html = renderToStaticMarkup(
+        React.createElement(
+          DisplayPreferenceProvider,
+          null,
+          React.createElement(AppTopbar)
+        )
+      );
+      expect(html).not.toContain("Dojo Mode");
+      expect(html).toContain("Currency");
+      expect(html).toContain("Work Hours");
+      expect(html).toContain("4-Yr Cost");
+    }
+  });
+
+  it("layers opaque label cards above SVG connector paths and preserves strokeWidth=4", () => {
+    const guest = createGuestSeededDojoProgress(
+      new Date("2026-11-26T12:00:00.000Z"),
+      "UTC"
+    );
+    const mapHtml = renderToStaticMarkup(
+      React.createElement(DojoSkillMap, {
+        progress: guest,
+        onSelectLevel: vi.fn(),
+      })
+    );
+
+    // SVG sits at z-0 with stroke-width="4" and bold sky accent for upcoming connector
+    expect(mapHtml).toContain('class="pointer-events-none absolute inset-0 z-0 h-full w-full"');
+    expect(mapHtml).toContain('stroke-width="4"');
+    expect(mapHtml).toContain('stroke="#0284c7"');
+    // Dotted-grid canvas present
+    expect(mapHtml).toContain("radial-gradient");
+    // All 9 level label cards use opaque surface styling and z-20 above z-0 SVG
+    expect(mapHtml.match(/data-testid="dojo-node-label-/g)).toHaveLength(9);
+    expect(mapHtml).toContain("bg-white/95");
+    expect(mapHtml).toContain("backdrop-blur-sm");
+    expect(mapHtml).toContain("z-20");
+    // Shared geometry label anchors assigned deterministically
+    expect(mapHtml).toContain('data-label-anchor="below"');
+    expect(mapHtml).toContain('data-label-anchor="left"');
+    expect(mapHtml).toContain('data-label-anchor="right"');
+  });
+
+  it("renders DojoSideRail with belt/rank, Next Up Spotlight, 9 badge slots, and dynamic citation count", () => {
+    const guest = createGuestSeededDojoProgress(
+      new Date("2026-11-26T12:00:00.000Z"),
+      "UTC"
+    );
+    const uniqueCitations = getUniqueDojoCitations();
+    expect(uniqueCitations).toHaveLength(12);
+
+    const onSelectLevel = vi.fn();
+    const onOpenTrophyCase = vi.fn();
+    const onOpenResearchLibrary = vi.fn();
+
+    render(
+      <DojoSideRail
+        progress={guest}
+        onSelectLevel={onSelectLevel}
+        onOpenTrophyCase={onOpenTrophyCase}
+        onOpenResearchLibrary={onOpenResearchLibrary}
+      />
+    );
+
+    expect(screen.getByText("White Belt")).toBeTruthy();
+    expect(screen.getByText("Impulse Rookie")).toBeTruthy();
+    expect(screen.getByText("120 XP")).toBeTruthy();
+    expect(screen.getByText(/80 XP to Yellow Belt/i)).toBeTruthy();
+    expect(screen.getByText("Next Up Spotlight")).toBeTruthy();
+    expect(screen.getByText("The Red, The Black & The Numb Tap")).toBeTruthy();
+    expect(screen.getByText(/Prelec & Loewenstein \(1998\)/i)).toBeTruthy();
+
+    // 9 badge slots in preview grid
+    const slots = screen.getAllByRole("listitem");
+    expect(slots).toHaveLength(9);
+    expect(slots[0].getAttribute("aria-label")).toContain("Unlocked");
+    expect(slots[1].getAttribute("aria-label")).toContain("Locked");
+
+    // Research count reflects actual unique citations
+    expect(screen.getByText(`${uniqueCitations.length} Studies`)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Launch Level 2/i }));
+    expect(onSelectLevel).toHaveBeenCalledWith(2);
+
+    fireEvent.click(screen.getByRole("button", { name: /View Full Trophy Case/i }));
+    expect(onOpenTrophyCase).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /Research Library/i }));
+    expect(onOpenResearchLibrary).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders completed-training state without broken launch controls when all 9 levels are done", () => {
+    let progress = createInitialDojoProgress("2026-11-01T08:00:00.000Z");
+    for (let id = 1 as DojoLevelId; id <= 9; id = (id + 1) as DojoLevelId) {
+      progress = applyDojoLevelCompletion(progress, {
+        levelId: id,
+        correctCount: 5,
+        totalQuestions: 5,
+        localDateKey: "2026-11-26",
+        nowIso: "2026-11-26T10:00:00.000Z",
+      }).nextProgress;
+    }
+
+    render(
+      <div className="space-y-4">
+        <DojoSkillMap progress={progress} onSelectLevel={vi.fn()} />
+        <DojoSideRail
+          progress={progress}
+          onSelectLevel={vi.fn()}
+          onOpenTrophyCase={vi.fn()}
+          onOpenResearchLibrary={vi.fn()}
+        />
+      </div>
+    );
+
+    expect(screen.getByText(/All 9 Drills Mastered/i)).toBeTruthy();
+    expect(screen.getByText(/All 9 Dojo Levels Completed/i)).toBeTruthy();
+    expect(screen.getByText(/Maximum rank achieved/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Continue Next Drill/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Launch Level/i })).toBeNull();
+  });
+
+  it("renders full 2-column DojoPage hub and launches active drill, Trophy Case, and Research Library", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    const { container } = render(
+      <QueryClientProvider client={queryClient}>
+        <DisplayPreferenceProvider>
+          <DojoPage />
+        </DisplayPreferenceProvider>
+      </QueryClientProvider>
+    );
+
+    // Wait for initial Guest Sandbox progress to load
+    const continueBtn = await screen.findByRole("button", {
+      name: /Continue Next Drill/i,
+    });
+    expect(continueBtn).toBeTruthy();
+    expect(container.innerHTML).toContain("lg:grid-cols-[minmax(0,1fr)_320px]");
+
+    // Continue Next Drill opens Level 2 briefing, and Start Training launches Phase 5C Arena
+    fireEvent.click(continueBtn);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Start Training/i })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Start Training/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: /Training Arena: Level 2/i })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Exit training arena/i }));
+
+    // Open Trophy Case from Command Rail
+    fireEvent.click(screen.getByRole("button", { name: /View Full Trophy Case/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Trophy Case & Belt Ladder/i)).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Close/i }));
+
+    // Open Research Library from Command Rail
+    const railLibraryBtn = screen.getAllByRole("button", {
+      name: /Research Library/i,
+    })[1];
+    fireEvent.click(railLibraryBtn);
+    await waitFor(() => {
+      expect(screen.getByText(/StopBucks Dojo Research Library/i)).toBeTruthy();
+      expect(screen.getByText(/12 verified peer-reviewed/i)).toBeTruthy();
+    });
   });
 });

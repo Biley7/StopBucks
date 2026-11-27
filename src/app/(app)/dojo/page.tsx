@@ -20,6 +20,7 @@ import {
 import { DojoHeader } from "@/components/dojo/dojo-header";
 import { DojoLessonArena } from "@/components/dojo/dojo-lesson-arena";
 import { DojoLevelBriefing } from "@/components/dojo/dojo-level-briefing";
+import { DojoSideRail } from "@/components/dojo/dojo-side-rail";
 import { DojoSkillMap } from "@/components/dojo/dojo-skill-map";
 import { DojoTrophyDrawer } from "@/components/dojo/dojo-trophy-drawer";
 import { Button } from "@/components/ui/button";
@@ -203,7 +204,16 @@ export default function DojoPage() {
         isSavingSound={soundMutation.isPending}
       />
 
-      <DojoSkillMap progress={progress} onSelectLevel={handleSelectLevel} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+        <DojoSkillMap progress={progress} onSelectLevel={handleSelectLevel} />
+
+        <DojoSideRail
+          progress={progress}
+          onSelectLevel={handleSelectLevel}
+          onOpenTrophyCase={() => setTrophyOpen(true)}
+          onOpenResearchLibrary={() => setCitationTarget({ mode: "library" })}
+        />
+      </div>
 
       <DojoLevelBriefing
         levelId={selectedLevelId}
@@ -257,9 +267,18 @@ export default function DojoPage() {
 function DojoSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Loading StopBucks Dojo">
-      <div className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white" />
-      <div className="h-20 animate-pulse rounded-xl border border-slate-200 bg-white" />
-      <div className="h-[520px] animate-pulse rounded-2xl border border-slate-200 bg-white" />
+      <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-4">
+          <div className="h-20 animate-pulse rounded-2xl border border-slate-200 bg-white" />
+          <div className="h-[520px] animate-pulse rounded-2xl border border-slate-200 bg-white" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-44 animate-pulse rounded-xl border border-slate-200 bg-white" />
+          <div className="h-48 animate-pulse rounded-xl border border-slate-200 bg-white" />
+          <div className="h-64 animate-pulse rounded-xl border border-slate-200 bg-white" />
+        </div>
+      </div>
     </div>
   );
 }

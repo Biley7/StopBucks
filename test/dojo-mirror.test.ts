@@ -415,4 +415,27 @@ describe("Phase 5A: Dojo Live Personal Data Mirror Engine", () => {
     expect(l9.metrics[2].numericValue).toBeNull();
     expect(l9.metrics[2].textValue).toBe("No resolved items");
   });
+
+  it("permits legitimate negative projected deficit in Level 8 while keeping non-negative money rescued and counts", () => {
+    const refDate = new Date("2026-11-10T12:00:00.000Z");
+    const overspentMirror = buildDojoPersonalMirror(8, {
+      profile: BASE_PROFILE,
+      transactions: [
+        makeTx({
+          id: "overspend",
+          amountMinor: 1900000, // Exceeds consumption budget pace
+          triggerTag: "convenience",
+          loggedAt: "2026-11-05T12:00:00.000Z",
+        }),
+      ],
+      fixedCommitments: [],
+      vaultItems: [],
+      referenceDate: refDate,
+      timeZone: "UTC",
+    });
+
+    assertValidMirrorShape(overspentMirror);
+    expect(overspentMirror.metrics[0].numericValue).toBeLessThan(0);
+    expect(overspentMirror.metrics[2].textValue).toBe("Deficit Watch");
+  });
 });
