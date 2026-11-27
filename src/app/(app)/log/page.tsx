@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -8,12 +8,34 @@ import { useRepository } from "@/repositories/repository-provider";
 import { queryKeys } from "@/lib/query-keys";
 import { QuickLogForm } from "@/components/quick-log/quick-log-form";
 import { TransactionLedger } from "@/components/quick-log/transaction-ledger";
-import { FadeInSection } from "@/components/shared/motion-primitives";
+import { FadeInSection, ShimmerBlock } from "@/components/shared/motion-primitives";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import type { Transaction } from "@/domain/types";
 
 export default function QuickLogPage() {
   const { repository, cacheIdentity, activeMode } = useRepository();
+  const [confirmedTxId, setConfirmedTxId] = useState<string | null>(null);
+  const confirmTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current !== null) {
+        window.clearTimeout(confirmTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleTransactionCreated = (created: Transaction) => {
+    setConfirmedTxId(created.id);
+    if (confirmTimerRef.current !== null) {
+      window.clearTimeout(confirmTimerRef.current);
+    }
+    confirmTimerRef.current = window.setTimeout(() => {
+      setConfirmedTxId((current) => (current === created.id ? null : current));
+      confirmTimerRef.current = null;
+    }, 3400);
+  };
 
   const profileQuery = useQuery({
     queryKey: queryKeys.profile(cacheIdentity),
@@ -40,12 +62,42 @@ export default function QuickLogPage() {
   ) {
     return (
       <div className="space-y-5" aria-busy="true" aria-label="Loading transaction log">
-        <div className="space-y-1.5">
-          <div className="h-7 w-48 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+        <div className="space-y-2">
+          <ShimmerBlock className="h-7 w-44" />
+          <ShimmerBlock className="h-4 w-72 bg-slate-200/50" />
         </div>
-        <div className="h-36 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-        <div className="h-80 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-3">
+          <ShimmerBlock className="h-5 w-36" />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <ShimmerBlock className="h-10 flex-1 rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-10 w-28 rounded-lg" />
+          </div>
+        </div>
+        <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+          <ShimmerBlock className="h-5 w-32" />
+          <div className="flex flex-wrap gap-2">
+            {[0, 1, 2, 3].map((idx) => (
+              <ShimmerBlock key={idx} className="h-9 w-28 rounded-full bg-slate-100" />
+            ))}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ShimmerBlock className="h-10 rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-10 rounded-lg bg-slate-100" />
+          </div>
+          <ShimmerBlock className="h-24 rounded-xl bg-slate-50" />
+        </div>
+        <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-3">
+          <ShimmerBlock className="h-5 w-40" />
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <ShimmerBlock className="h-9 rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-9 rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-9 rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-9 rounded-lg bg-slate-100" />
+          </div>
+          {[0, 1, 2, 3].map((row) => (
+            <ShimmerBlock key={row} className="h-12 rounded-xl bg-slate-100" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -87,7 +139,7 @@ export default function QuickLogPage() {
 
   if (!profile) {
     return (
-      <Card className="border-amber-200 bg-amber-50 p-6">
+      <Card className="border-amber-600/20 bg-amber-50/70 p-6">
         <h2 className="text-base font-semibold text-amber-900">Set your baseline first</h2>
         <p className="mt-1 text-xs text-amber-700">
           Your runway needs a budget and hourly rate before expenses can be logged.
@@ -115,6 +167,7 @@ export default function QuickLogPage() {
           profile={profile}
           transactions={transactionsQuery.data ?? []}
           fixedCommitmentsMinor={totalFixedMinor}
+          onTransactionCreated={handleTransactionCreated}
         />
       </FadeInSection>
 
@@ -123,6 +176,7 @@ export default function QuickLogPage() {
           profile={profile}
           transactions={transactionsQuery.data ?? []}
           isLoading={transactionsQuery.isFetching}
+          confirmedTransactionId={confirmedTxId}
         />
       </FadeInSection>
     </div>

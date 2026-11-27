@@ -20,7 +20,7 @@ export function VaultHistory({ items, profile }: VaultHistoryProps) {
   const purchased = items.filter((item) => item.status === "purchased");
 
   return (
-    <Card className="min-w-0 border-slate-200/80">
+    <Card className="min-w-0 border-slate-900/[0.08]">
       <CardHeader className="pb-3">
         <CardTitle as="h2" className="text-base">Vault History</CardTitle>
         <CardDescription className="text-xs">

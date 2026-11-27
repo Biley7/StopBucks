@@ -129,7 +129,7 @@ export default function OnboardingPage() {
   const symbolPadClass = currConfig.symbol.length > 1 ? "pl-12" : "pl-8";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F6F8] p-4 sm:p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F8FA] p-4 sm:p-6">
       <div className="w-full max-w-xl">
         {hasExistingProfile && (
           <div className="mb-4">

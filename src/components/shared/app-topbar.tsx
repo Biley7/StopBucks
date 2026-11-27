@@ -38,7 +38,7 @@ export function AppTopbar() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-slate-200/90 bg-white/95 px-3.5 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-slate-900/[0.08] bg-white/95 px-3.5 backdrop-blur-md sm:px-6">
       {/* Mobile Brand / Module Context */}
       <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <Link
@@ -94,7 +94,7 @@ export function MobileBottomNav() {
   return (
     <nav
       aria-label="Primary mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 items-center border-t border-slate-200/90 bg-white/95 px-1.5 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-md shadow-[0_-4px_16px_-8px_rgba(15,23,42,0.12)] md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 items-center border-t border-slate-900/[0.08] bg-white/95 px-1.5 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
     >
       {NAV_ITEMS.map((item) => {
         const isActive =

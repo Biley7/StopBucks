@@ -14,6 +14,7 @@ import type { BiasAnalysisResult, RunwayMetrics, UserProfile } from "@/domain/ty
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { RollingNumber } from "@/components/shared/motion-primitives";
 
 interface WeeklyCoachProps {
   bias: BiasAnalysisResult;
@@ -110,11 +111,11 @@ export function WeeklyCoach({ bias, runway, profile }: WeeklyCoachProps) {
   const isGenerating = generateMutation.isPending;
 
   return (
-    <Card className="border-sky-200 bg-gradient-to-br from-sky-50/70 via-white to-white">
+    <Card className="border-slate-900/[0.08] bg-white">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-600/15 bg-sky-50 text-sky-700">
               <Brain className="h-4 w-4" />
             </div>
             <div>
@@ -192,15 +193,17 @@ export function WeeklyCoach({ bias, runway, profile }: WeeklyCoachProps) {
               </span>
               <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium tabular-nums text-emerald-800">
                 Projected savings:{" "}
-                {formatAmount(
-                  nudge.projected_savings_minor,
-                  profile.currency,
-                  profile.hourlyRateMinor
-                )}
+                <RollingNumber
+                  value={formatAmount(
+                    nudge.projected_savings_minor,
+                    profile.currency,
+                    profile.hourlyRateMinor
+                  )}
+                />
               </span>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                 Three-day experiment
               </p>

@@ -26,6 +26,8 @@ import { FixedCommitmentsCard } from "@/components/dashboard/fixed-commitments-c
 import { ImpulseSimulatorDialog } from "@/components/shared/impulse-simulator-dialog";
 import {
   FadeInSection,
+  RollingNumber,
+  ShimmerBlock,
   StaggerGrid,
   StaggerItem,
 } from "@/components/shared/motion-primitives";
@@ -240,11 +242,13 @@ function RunwayDashboard({
             {isCurrentMonth ? (
               <>
                 {profile.currency} · {liveRunway.daysRemainingInMonth} days left ·{" "}
-                {formatAmount(
-                  liveRunway.remainingConsumptionMinor,
-                  profile.currency,
-                  profile.hourlyRateMinor
-                )}{" "}
+                <RollingNumber
+                  value={formatAmount(
+                    liveRunway.remainingConsumptionMinor,
+                    profile.currency,
+                    profile.hourlyRateMinor
+                  )}
+                />{" "}
                 remaining consumption budget
               </>
             ) : (
@@ -296,9 +300,9 @@ function RunwayDashboard({
             trigger={
               <button
                 type="button"
-                className="group flex h-full w-full items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/80 p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_16px_-6px_rgba(2,132,199,0.14)] transition-all duration-150 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
+                className="group flex h-full w-full items-start gap-3 rounded-2xl border border-sky-600/20 bg-white p-4 text-left transition-colors duration-150 hover:border-sky-600/40 hover:bg-sky-50/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
               >
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 transition-transform duration-150 group-hover:scale-105">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-sky-600/15 bg-sky-50 text-sky-700">
                   <Sparkles className="h-4 w-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -357,9 +361,9 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex h-full items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_16px_-6px_rgba(15,23,42,0.06)] transition-all duration-150 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+      className="group flex h-full items-start gap-3 rounded-2xl border border-slate-900/[0.08] bg-white p-4 transition-colors duration-150 hover:border-sky-600/30 hover:bg-slate-50/70 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
     >
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition-transform duration-150 group-hover:scale-105">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-900/[0.06] bg-slate-50 text-sky-600">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -376,15 +380,83 @@ function QuickAction({
 function RunwaySkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Loading daily runway">
-      <div className="space-y-1.5">
-        <div className="h-7 w-64 animate-pulse rounded-lg bg-slate-200" />
-        <div className="h-4 w-48 animate-pulse rounded bg-slate-100" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <ShimmerBlock className="h-7 w-72" />
+          <ShimmerBlock className="h-4 w-56 bg-slate-200/50" />
+        </div>
+        <div className="flex items-center gap-2">
+          <ShimmerBlock className="h-10 w-52 rounded-xl" />
+          <ShimmerBlock className="h-9 w-28 rounded-lg" />
+        </div>
       </div>
-      <div className="h-52 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-      <div className="h-36 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+
+      {/* Hero geometry-matched skeleton */}
+      <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-2.5">
+            <ShimmerBlock className="h-3.5 w-28" />
+            <ShimmerBlock className="h-10 w-44" />
+            <ShimmerBlock className="h-3.5 w-60 bg-slate-200/50" />
+          </div>
+          <ShimmerBlock className="h-7 w-24 rounded-full" />
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <ShimmerBlock className="h-3.5 w-36 bg-slate-200/50" />
+            <ShimmerBlock className="h-3.5 w-28 bg-slate-200/50" />
+          </div>
+          <ShimmerBlock className="h-2.5 w-full rounded-full" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 border-t border-slate-900/[0.06] pt-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((idx) => (
+            <div
+              key={idx}
+              className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3 space-y-2"
+            >
+              <ShimmerBlock className="h-3 w-20 bg-slate-200/60" />
+              <ShimmerBlock className="h-5 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Allocation card geometry-matched skeleton */}
+      <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+        <ShimmerBlock className="h-5 w-56" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((idx) => (
+            <div
+              key={idx}
+              className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3 space-y-2"
+            >
+              <ShimmerBlock className="h-3 w-24 bg-slate-200/60" />
+              <ShimmerBlock className="h-5 w-20" />
+              <ShimmerBlock className="h-3 w-28 bg-slate-200/50" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-56 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-        <div className="h-56 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="h-64 rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+          <ShimmerBlock className="h-5 w-40" />
+          <div className="grid grid-cols-2 gap-2.5">
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+          </div>
+        </div>
+        <div className="h-64 rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+          <ShimmerBlock className="h-5 w-44" />
+          <div className="grid grid-cols-2 gap-2.5">
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-14 rounded-xl bg-slate-100" />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -12,29 +12,30 @@ export type BrandMarkProps = {
 
 const SIZE_MAP = {
   sm: {
-    box: "h-9 w-9 rounded-lg",
+    emblem: "h-9 w-9",
     px: 36,
     wordmark: "text-base font-bold tracking-tight",
     subtitle: "text-[10px] font-semibold uppercase tracking-wider",
   },
   md: {
-    box: "h-10 w-10 rounded-xl",
+    emblem: "h-10 w-10",
     px: 40,
     wordmark: "text-base font-bold tracking-tight sm:text-lg",
     subtitle: "text-[10px] font-semibold uppercase tracking-wider",
   },
   lg: {
-    box: "h-16 w-16 rounded-2xl",
-    px: 64,
+    emblem: "h-[68px] w-[68px] sm:h-[72px] sm:w-[72px]",
+    px: 72,
     wordmark: "text-xl font-extrabold tracking-tight",
     subtitle: "text-xs font-semibold uppercase tracking-wider",
   },
 } as const;
 
 /**
- * Reusable StopBucks brand mark backed by the canonical supplied logo asset.
- * Preserves aspect ratio (object-contain), supports light/dark surfaces, and
- * avoids duplicate screen-reader announcements when the adjacent wordmark renders.
+ * Reusable StopBucks brand mark backed by the tightly cropped octagonal emblem.
+ * Sits directly on the application surface without an enclosing container,
+ * preserves aspect ratio (object-contain), and avoids duplicate screen-reader
+ * announcements when the adjacent wordmark renders.
  */
 export function BrandMark({
   size = "md",
@@ -48,23 +49,15 @@ export function BrandMark({
 
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-2.5", className)}>
-      <span
-        className={cn(
-          "relative inline-flex shrink-0 items-center justify-center overflow-hidden bg-white p-0.5 shadow-2xs",
-          isDark ? "ring-1 ring-white/20" : "ring-1 ring-slate-200/80",
-          cfg.box
-        )}
-      >
-        <Image
-          src="/stopbucks-logo.png"
-          width={cfg.px}
-          height={cfg.px}
-          alt={showWordmark ? "" : "StopBucks"}
-          aria-hidden={showWordmark ? true : undefined}
-          className="h-full w-full object-contain"
-          priority={size === "lg"}
-        />
-      </span>
+      <Image
+        src="/stopbucks-emblem.png"
+        width={cfg.px}
+        height={cfg.px}
+        alt={showWordmark ? "" : "StopBucks"}
+        aria-hidden={showWordmark ? true : undefined}
+        className={cn("shrink-0 object-contain", cfg.emblem)}
+        priority={size === "lg"}
+      />
 
       {showWordmark && (
         <span className="min-w-0 leading-tight">

@@ -18,6 +18,8 @@ import { WeeklyCoach } from "@/components/bias-radar/weekly-coach";
 import { MonthSwitcher } from "@/components/shared/month-switcher";
 import {
   FadeInSection,
+  RollingNumber,
+  ShimmerBlock,
   StaggerGrid,
   StaggerItem,
 } from "@/components/shared/motion-primitives";
@@ -96,18 +98,42 @@ export default function RadarPage() {
   if (profileQuery.isLoading || transactionsQuery.isLoading) {
     return (
       <div className="space-y-5" aria-busy="true" aria-label="Loading behavioral radar">
-        <div className="space-y-1.5">
-          <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <ShimmerBlock className="h-7 w-52" />
+            <ShimmerBlock className="h-4 w-72 bg-slate-200/50" />
+          </div>
+          <ShimmerBlock className="h-10 w-52 rounded-xl" />
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          {[0, 1, 2].map((idx) => (
+            <div
+              key={idx}
+              className="h-24 rounded-2xl border border-slate-900/[0.08] bg-white p-4 space-y-2.5"
+            >
+              <ShimmerBlock className="h-3.5 w-28" />
+              <ShimmerBlock className="h-7 w-24" />
+            </div>
+          ))}
         </div>
         <div className="grid gap-4 lg:grid-cols-5">
-          <div className="h-80 animate-pulse rounded-2xl border border-slate-200/80 bg-white lg:col-span-2" />
-          <div className="h-80 animate-pulse rounded-2xl border border-slate-200/80 bg-white lg:col-span-3" />
+          <div className="h-[390px] rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4 lg:col-span-2">
+            <ShimmerBlock className="h-5 w-40" />
+            <ShimmerBlock className="h-64 w-full rounded-xl bg-slate-100" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:col-span-3">
+            {[0, 1, 2, 3].map((idx) => (
+              <div
+                key={idx}
+                className="h-[188px] rounded-2xl border border-slate-900/[0.08] bg-white p-5 space-y-3"
+              >
+                <ShimmerBlock className="h-4 w-36" />
+                <ShimmerBlock className="h-2 w-full rounded-full" />
+                <ShimmerBlock className="h-4 w-48 bg-slate-200/50" />
+                <ShimmerBlock className="h-3.5 w-40 bg-slate-200/40" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -211,9 +237,9 @@ export default function RadarPage() {
                 {riskBadge.label}
               </span>
             </div>
-            <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
-              {bias.overallRiskScore}
-              <span className="text-sm font-semibold text-slate-500"> / 100</span>
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums tracking-[-0.025em] text-slate-900">
+              <RollingNumber value={String(bias.overallRiskScore)} />
+              <span className="text-sm font-semibold text-slate-400"> / 100</span>
             </p>
           </Card>
         </StaggerItem>
@@ -239,8 +265,8 @@ export default function RadarPage() {
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               Analysed Activity
             </span>
-            <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
-              {analysisTransactions.length}
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums tracking-[-0.025em] text-slate-900">
+              <RollingNumber value={String(analysisTransactions.length)} />
               <span className="ml-1.5 text-sm font-medium text-slate-500">
                 transaction{analysisTransactions.length === 1 ? "" : "s"}
               </span>
@@ -261,7 +287,7 @@ export default function RadarPage() {
       {isCurrentMonth ? (
         <WeeklyCoach bias={bias} runway={runway} profile={profile} />
       ) : (
-        <Card className="border-slate-200 bg-slate-50/70 p-4">
+        <Card className="border-slate-900/[0.08] bg-slate-50/90 p-4">
           <div className="flex items-center gap-2.5 text-xs text-slate-600">
             <Info className="h-4 w-4 text-slate-400 shrink-0" />
             <p className="font-medium">
@@ -271,7 +297,7 @@ export default function RadarPage() {
         </Card>
       )}
 
-      <Card className="border-emerald-200 bg-emerald-50/40">
+      <Card className="border-emerald-600/20 bg-white">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-600" />

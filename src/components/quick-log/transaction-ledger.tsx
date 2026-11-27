@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useId, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Pencil, Search, Trash2 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  Loader2,
+  Pencil,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useRepository } from "@/repositories/repository-provider";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { queryKeys } from "@/lib/query-keys";
 import { getLocalDateParts } from "@/domain/behavioral-engine";
+import { formatMinorUnits } from "@/domain/currency";
 import { TRIGGER_LABELS, TRIGGER_ORDER } from "@/domain/runway-insights";
 import { getClientTimeZone } from "@/lib/timezone";
 import {
@@ -15,6 +25,11 @@ import {
   buildTransactionsCsvFilename,
   downloadCsv,
 } from "@/lib/csv";
+import {
+  FINTECH_EASE,
+  SharedPillTabs,
+  ShimmerBlock,
+} from "@/components/shared/motion-primitives";
 import { EditTransactionDialog } from "./edit-transaction-dialog";
 import type { PaymentMode, Transaction, TriggerTag, UserProfile } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +57,7 @@ interface TransactionLedgerProps {
   profile: UserProfile;
   transactions: Transaction[];
   isLoading: boolean;
+  confirmedTransactionId?: string | null;
 }
 
 function formatTimeOnly(iso: string): string {
@@ -57,22 +73,55 @@ function formatTimeOnly(iso: string): string {
   }
 }
 
+function formatFullTimestamp(iso: string, timeZone: string): string {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+  } catch {
+    return iso;
+  }
+}
+
+function getTriggerContextLabel(trigger: TriggerTag): string {
+  return trigger === "invest_self"
+    ? "Protected self-investment (does not shrink daily runway)"
+    : "Consumption spend drawn from monthly disposable pool";
+}
+
 export function TransactionLedger({
   profile,
   transactions,
   isLoading,
+  confirmedTransactionId = null,
 }: TransactionLedgerProps) {
   const { repository, cacheIdentity } = useRepository();
   const { formatAmount } = useDisplayPreference();
   const queryClient = useQueryClient();
   const timeZone = useMemo(getClientTimeZone, []);
+  const prefersReducedMotion = useReducedMotion();
+  const shouldReduceMotion = Boolean(prefersReducedMotion);
+  const baseId = useId();
 
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [triggerFilter, setTriggerFilter] = useState<"all" | TriggerTag>("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | PaymentMode>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
 
   const availableMonths = useMemo(() => {
     const monthKeys = new Set<string>();
@@ -189,7 +238,7 @@ export function TransactionLedger({
     paymentFilter !== "all";
 
   return (
-    <Card className="border-slate-200/80">
+    <Card className="border-slate-900/[0.08]">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -205,7 +254,7 @@ export function TransactionLedger({
           </Button>
         </div>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto]">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
           <div className="relative sm:col-span-2 lg:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <Input
@@ -248,19 +297,19 @@ export function TransactionLedger({
             </SelectContent>
           </Select>
 
-          <Select
+          <SharedPillTabs<"all" | PaymentMode>
+            items={[
+              { value: "all", label: "All" },
+              { value: "cash", label: "Cash" },
+              { value: "cashless", label: "Cashless" },
+            ]}
             value={paymentFilter}
-            onValueChange={(value) => setPaymentFilter(value as "all" | PaymentMode)}
-          >
-            <SelectTrigger className="h-9 text-xs lg:w-32" aria-label="Filter by payment mode">
-              <SelectValue placeholder="All modes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All modes</SelectItem>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="cashless">Cashless</SelectItem>
-            </SelectContent>
-          </Select>
+            onChange={setPaymentFilter}
+            ariaLabel="Filter by payment mode"
+            layoutId="ledger-payment-filter-pill"
+            className="h-9 justify-self-start"
+            pillClassName="h-7.5"
+          />
         </div>
       </CardHeader>
 
@@ -268,11 +317,11 @@ export function TransactionLedger({
         {isLoading ? (
           <div className="space-y-2.5" aria-busy="true" aria-label="Loading transactions">
             {[0, 1, 2, 3].map((row) => (
-              <div key={row} className="h-12 animate-pulse rounded-xl bg-slate-100" />
+              <ShimmerBlock key={row} className="h-12 rounded-xl bg-slate-100" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-10 text-center">
+          <div className="rounded-xl border border-dashed border-slate-900/[0.12] bg-slate-50/90 px-4 py-10 text-center">
             <p className="text-sm font-medium text-slate-700">
               {transactions.length === 0 ? "No transactions yet" : "Nothing matches these filters"}
             </p>
@@ -302,9 +351,9 @@ export function TransactionLedger({
           <div className="space-y-5">
             {groupedByDay.map((group) => (
               <section key={group.dayKey} className="space-y-2">
-                <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5 text-xs">
+                <div className="flex items-center justify-between border-b border-slate-900/[0.08] pb-1.5 text-xs">
                   <h3 className="font-semibold text-slate-700">{group.label}</h3>
-                  <span className="font-semibold tabular-nums text-slate-600">
+                  <span className="font-semibold tabular-nums tracking-[-0.025em] text-slate-600">
                     {formatAmount(group.totalMinor, profile.currency, profile.hourlyRateMinor)}
                   </span>
                 </div>
@@ -313,7 +362,7 @@ export function TransactionLedger({
                 <div className="hidden overflow-x-auto lg:block">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-500">
+                      <tr className="border-b border-slate-900/[0.06] text-[10px] uppercase tracking-wide text-slate-500">
                         <th className="py-1.5 pr-3 font-semibold">Time</th>
                         <th className="py-1.5 pr-3 font-semibold">Description</th>
                         <th className="py-1.5 pr-3 font-semibold">Trigger</th>
@@ -323,102 +372,245 @@ export function TransactionLedger({
                       </tr>
                     </thead>
                     <tbody>
-                      {group.items.map((tx) => (
-                        <tr
-                          key={tx.id}
-                          className="border-b border-slate-100 transition-colors last:border-0 hover:bg-slate-50/60"
-                        >
-                          <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-slate-500">
-                            {formatTimeOnly(tx.loggedAt)}
-                          </td>
-                          <td className="max-w-[18rem] truncate py-2.5 pr-3 font-medium text-slate-900">
-                            {tx.note || "Untitled expense"}
-                          </td>
-                          <td className="py-2.5 pr-3">
-                            <TriggerBadge trigger={tx.triggerTag} />
-                          </td>
-                          <td className="py-2.5 pr-3 capitalize text-slate-600">
-                            {tx.paymentMode}
-                          </td>
-                          <td className="whitespace-nowrap py-2.5 pr-3 text-right font-semibold tabular-nums text-slate-900">
-                            {formatAmount(tx.amountMinor, profile.currency, profile.hourlyRateMinor)}
-                          </td>
-                          <td className="py-2 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-slate-500 hover:bg-sky-50 hover:text-sky-700"
-                                onClick={() => setEditingTx(tx)}
-                                aria-label={`Edit ${tx.note || "transaction"}`}
+                      {group.items.map((tx) => {
+                        const isExpanded = expandedId === tx.id;
+                        const isOptimistic = tx.id.startsWith("optimistic-");
+                        const isConfirmed = tx.id === confirmedTransactionId;
+                        const detailId = `${baseId}-detail-${tx.id}`;
+
+                        return (
+                          <React.Fragment key={tx.id}>
+                            <tr
+                              onClick={() => toggleExpand(tx.id)}
+                              className={cn(
+                                "border-b border-slate-900/[0.05] transition-colors duration-150 last:border-0 cursor-pointer",
+                                isConfirmed
+                                  ? "bg-emerald-50/70"
+                                  : isExpanded
+                                    ? "bg-slate-50/90"
+                                    : "hover:bg-slate-50/80"
+                              )}
+                            >
+                              <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums text-slate-500">
+                                {formatTimeOnly(tx.loggedAt)}
+                              </td>
+                              <td className="max-w-[18rem] py-2.5 pr-3">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <button
+                                    type="button"
+                                    aria-expanded={isExpanded}
+                                    aria-controls={detailId}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleExpand(tx.id);
+                                    }}
+                                    className="inline-flex min-w-0 items-center gap-1.5 rounded-md text-left font-medium text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
+                                  >
+                                    <ChevronDown
+                                      className={cn(
+                                        "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+                                        isExpanded && "rotate-180 text-sky-600"
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                    <span className="truncate">{tx.note || "Untitled expense"}</span>
+                                  </button>
+                                  <TransactionConfirmationPill
+                                    isOptimistic={isOptimistic}
+                                    isConfirmed={isConfirmed}
+                                    shouldReduceMotion={shouldReduceMotion}
+                                  />
+                                </div>
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                <TriggerBadge trigger={tx.triggerTag} />
+                              </td>
+                              <td className="py-2.5 pr-3 capitalize text-slate-600">
+                                {tx.paymentMode}
+                              </td>
+                              <td className="whitespace-nowrap py-2.5 pr-3 text-right font-semibold tabular-nums tracking-[-0.025em] text-slate-900">
+                                {formatAmount(tx.amountMinor, profile.currency, profile.hourlyRateMinor)}
+                              </td>
+                              <td
+                                className="py-2 text-right"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-700"
-                                onClick={() => setPendingDelete(tx)}
-                                aria-label={`Delete ${tx.note || "transaction"}`}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-slate-500 hover:bg-sky-50 hover:text-sky-700"
+                                    disabled={isOptimistic}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingTx(tx);
+                                    }}
+                                    aria-label={`Edit ${tx.note || "transaction"}`}
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                                    disabled={isOptimistic}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPendingDelete(tx);
+                                    }}
+                                    aria-label={`Delete ${tx.note || "transaction"}`}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+
+                            {isExpanded && (
+                              <tr id={detailId} className="border-b border-slate-900/[0.06] bg-slate-50/70">
+                                <td colSpan={6} className="px-3 py-3">
+                                  <motion.div
+                                    initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={
+                                      shouldReduceMotion
+                                        ? { duration: 0 }
+                                        : { duration: 0.18, ease: FINTECH_EASE }
+                                    }
+                                    className="rounded-xl border border-slate-900/[0.05] bg-white p-3.5"
+                                  >
+                                    <TransactionExpandedDetails
+                                      tx={tx}
+                                      profile={profile}
+                                      timeZone={timeZone}
+                                      isOptimistic={isOptimistic}
+                                      onEdit={() => setEditingTx(tx)}
+                                      onDelete={() => setPendingDelete(tx)}
+                                    />
+                                  </motion.div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
                 {/* Mobile & tablet cards */}
                 <div className="space-y-2 lg:hidden">
-                  {group.items.map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="rounded-xl border border-slate-200/80 bg-white p-3 text-xs shadow-2xs"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900">
-                            {tx.note || "Untitled expense"}
+                  {group.items.map((tx) => {
+                    const isExpanded = expandedId === tx.id;
+                    const isOptimistic = tx.id.startsWith("optimistic-");
+                    const isConfirmed = tx.id === confirmedTransactionId;
+                    const detailId = `${baseId}-mobile-detail-${tx.id}`;
+
+                    return (
+                      <div
+                        key={tx.id}
+                        className={cn(
+                          "rounded-xl border p-3 text-xs transition-colors duration-150",
+                          isConfirmed
+                            ? "border-emerald-600/30 bg-emerald-50/50"
+                            : "border-slate-900/[0.08] bg-white"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          aria-expanded={isExpanded}
+                          aria-controls={detailId}
+                          onClick={() => toggleExpand(tx.id)}
+                          className="flex w-full items-start justify-between gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-lg cursor-pointer"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <ChevronDown
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-150 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+                                  isExpanded && "rotate-180 text-sky-600"
+                                )}
+                                aria-hidden="true"
+                              />
+                              <p className="truncate font-semibold text-slate-900">
+                                {tx.note || "Untitled expense"}
+                              </p>
+                              <TransactionConfirmationPill
+                                isOptimistic={isOptimistic}
+                                isConfirmed={isConfirmed}
+                                shouldReduceMotion={shouldReduceMotion}
+                              />
+                            </div>
+                            <p className="mt-0.5 pl-5 text-[11px] tabular-nums text-slate-500">
+                              {formatTimeOnly(tx.loggedAt)} ·{" "}
+                              <span className="capitalize">{tx.paymentMode}</span>
+                            </p>
+                          </div>
+                          <p className="whitespace-nowrap font-bold tabular-nums tracking-[-0.025em] text-slate-900">
+                            {formatAmount(tx.amountMinor, profile.currency, profile.hourlyRateMinor)}
                           </p>
-                          <p className="mt-0.5 text-[11px] tabular-nums text-slate-500">
-                            {formatTimeOnly(tx.loggedAt)} ·{" "}
-                            <span className="capitalize">{tx.paymentMode}</span>
-                          </p>
+                        </button>
+
+                        <div className="mt-2.5 flex items-center justify-between gap-2">
+                          <TriggerBadge trigger={tx.triggerTag} />
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2.5 text-xs text-slate-600 hover:bg-sky-50 hover:text-sky-700"
+                              disabled={isOptimistic}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTx(tx);
+                              }}
+                              aria-label={`Edit ${tx.note || "transaction"}`}
+                            >
+                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                              Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 px-2.5 text-xs text-slate-600 hover:bg-red-50 hover:text-red-700"
+                              disabled={isOptimistic}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPendingDelete(tx);
+                              }}
+                              aria-label={`Delete ${tx.note || "transaction"}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
-                        <p className="whitespace-nowrap font-bold tabular-nums text-slate-900">
-                          {formatAmount(tx.amountMinor, profile.currency, profile.hourlyRateMinor)}
-                        </p>
-                      </div>
-                      <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <TriggerBadge trigger={tx.triggerTag} />
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 px-2.5 text-xs text-slate-600 hover:bg-sky-50 hover:text-sky-700"
-                            onClick={() => setEditingTx(tx)}
-                            aria-label={`Edit ${tx.note || "transaction"}`}
+
+                        {isExpanded && (
+                          <motion.div
+                            id={detailId}
+                            initial={shouldReduceMotion ? false : { opacity: 0, y: -4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={
+                              shouldReduceMotion
+                                ? { duration: 0 }
+                                : { duration: 0.18, ease: FINTECH_EASE }
+                            }
+                            className="mt-3 rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3"
                           >
-                            <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-8 px-2.5 text-xs text-slate-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => setPendingDelete(tx)}
-                            aria-label={`Delete ${tx.note || "transaction"}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            Delete
-                          </Button>
-                        </div>
+                            <TransactionExpandedDetails
+                              tx={tx}
+                              profile={profile}
+                              timeZone={timeZone}
+                              isOptimistic={isOptimistic}
+                              onEdit={() => setEditingTx(tx)}
+                              onDelete={() => setPendingDelete(tx)}
+                              hideActions
+                            />
+                          </motion.div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             ))}
@@ -475,20 +667,159 @@ export function TransactionLedger({
   );
 }
 
+function TransactionConfirmationPill({
+  isOptimistic,
+  isConfirmed,
+  shouldReduceMotion,
+}: {
+  isOptimistic: boolean;
+  isConfirmed: boolean;
+  shouldReduceMotion: boolean;
+}) {
+  if (!isOptimistic && !isConfirmed) return null;
+
+  return (
+    <motion.span
+      key={isConfirmed ? "confirmed" : "pending"}
+      initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={
+        shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: FINTECH_EASE }
+      }
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+        isConfirmed
+          ? "border-emerald-600/20 bg-emerald-50 text-emerald-800"
+          : "border-slate-900/[0.08] bg-slate-100 text-slate-600"
+      )}
+    >
+      {isConfirmed ? (
+        <>
+          <CheckCircle2 className="h-3 w-3 text-emerald-600" aria-hidden="true" />
+          <span>Logged</span>
+        </>
+      ) : (
+        <>
+          <Loader2 className="h-3 w-3 animate-spin text-slate-500" aria-hidden="true" />
+          <span>Saving</span>
+        </>
+      )}
+    </motion.span>
+  );
+}
+
+function TransactionExpandedDetails({
+  tx,
+  profile,
+  timeZone,
+  isOptimistic,
+  onEdit,
+  onDelete,
+  hideActions = false,
+}: {
+  tx: Transaction;
+  profile: UserProfile;
+  timeZone: string;
+  isOptimistic: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  hideActions?: boolean;
+}) {
+  return (
+    <div className="space-y-3 text-xs">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="rounded-lg border border-slate-900/[0.05] bg-slate-50/90 p-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            Currency Amount
+          </p>
+          <p className="mt-0.5 font-semibold tabular-nums text-slate-900">
+            {formatMinorUnits(tx.amountMinor, profile.currency, "currency", profile.hourlyRateMinor)}
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-900/[0.05] bg-slate-50/90 p-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            Work Hours
+          </p>
+          <p className="mt-0.5 font-semibold tabular-nums text-slate-900">
+            {formatMinorUnits(tx.amountMinor, profile.currency, "work_hours", profile.hourlyRateMinor)}
+          </p>
+        </div>
+        <div className="rounded-lg border border-slate-900/[0.05] bg-slate-50/90 p-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            4-Year Compounded Cost
+          </p>
+          <p className="mt-0.5 font-semibold tabular-nums text-emerald-700">
+            {formatMinorUnits(tx.amountMinor, profile.currency, "compounded_4yr", profile.hourlyRateMinor)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-600">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span>
+            Date: <strong className="font-medium text-slate-800">{formatFullTimestamp(tx.loggedAt, timeZone)}</strong>
+          </span>
+          <span>
+            Trigger: <strong className="font-medium text-slate-800">{TRIGGER_LABELS[tx.triggerTag]}</strong>
+          </span>
+          <span className="capitalize">
+            Mode: <strong className="font-medium text-slate-800">{tx.paymentMode}</strong>
+          </span>
+        </div>
+
+        {!hideActions && (
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 px-2.5 text-xs"
+              disabled={isOptimistic}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <Pencil className="h-3 w-3" aria-hidden="true" />
+              Edit
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 border-rose-600/20 px-2.5 text-xs text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+              disabled={isOptimistic}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-3 w-3" aria-hidden="true" />
+              Delete
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <p className="text-[11px] text-slate-500">{getTriggerContextLabel(tx.triggerTag)}</p>
+    </div>
+  );
+}
+
 function TriggerBadge({ trigger }: { trigger: TriggerTag }) {
   const tone =
     trigger === "invest_self"
-      ? "bg-emerald-100 text-emerald-800"
+      ? "bg-emerald-50 text-emerald-800 border-emerald-600/20"
       : trigger === "stress_late_night"
-        ? "bg-indigo-100 text-indigo-800"
+        ? "bg-indigo-50 text-indigo-800 border-indigo-600/20"
         : trigger === "social_fomo"
-          ? "bg-rose-100 text-rose-800"
+          ? "bg-rose-50 text-rose-800 border-rose-600/20"
           : trigger === "convenience"
-            ? "bg-amber-100 text-amber-800"
-            : "bg-slate-100 text-slate-700";
+            ? "bg-amber-50 text-amber-800 border-amber-600/20"
+            : "bg-slate-100 text-slate-700 border-slate-900/[0.08]";
 
   return (
-    <Badge className={cn("border-transparent px-2 py-0.5 text-[10px] font-semibold", tone)}>
+    <Badge className={cn("px-2 py-0.5 text-[10px] font-semibold", tone)}>
       {TRIGGER_LABELS[trigger]}
     </Badge>
   );

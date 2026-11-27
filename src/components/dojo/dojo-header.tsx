@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
@@ -14,6 +13,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { DOJO_LEVELS, getDojoWorld } from "@/domain/dojo-curriculum";
 import { getDojoRank } from "@/domain/dojo-engine";
 import type { DojoLevelId, DojoProgress } from "@/domain/dojo-types";
@@ -41,9 +41,6 @@ export function DojoHeader({
   onToggleSound,
   isSavingSound = false,
 }: DojoHeaderProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const shouldReduceMotion = Boolean(prefersReducedMotion);
-
   const rank = getDojoRank(progress.totalXp);
   const beltStyle = DOJO_BELT_STYLES[rank.belt];
   const isMaxRank = rank.nextBeltXp === null;
@@ -68,7 +65,7 @@ export function DojoHeader({
     : `${rank.currentXp} / ${rank.nextBeltXp} XP (${rank.progressPct}%)`;
 
   return (
-    <Card className="border-slate-200/90 bg-white">
+    <Card className="border-slate-900/[0.08] bg-white">
       <CardContent className="p-3.5 sm:px-5 sm:py-3.5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Mobile & Tablet (< lg): Compact Belt, Rank, XP Progress & Streak */}
@@ -122,26 +119,13 @@ export function DojoHeader({
                 </span>
               </div>
 
-              <div
-                role="progressbar"
-                aria-label="XP progress toward next belt"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={rank.progressPct}
-                aria-valuetext={xpLabel}
-                className="h-2.5 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100"
-              >
-                <motion.div
-                  initial={false}
-                  animate={{ width: `${rank.progressPct}%` }}
-                  transition={
-                    shouldReduceMotion
-                      ? { duration: 0 }
-                      : { type: "spring", stiffness: 180, damping: 24 }
-                  }
-                  className={cn("h-full rounded-full", beltStyle.progressBarClass)}
-                />
-              </div>
+              <AnimatedProgressBar
+                value={rank.progressPct}
+                ariaLabel="XP progress toward next belt"
+                ariaValueText={xpLabel}
+                trackClassName="h-2.5 border border-slate-900/[0.06] bg-slate-100"
+                barClassName={beltStyle.progressBarClass}
+              />
             </div>
           </div>
 

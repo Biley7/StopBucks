@@ -5,7 +5,7 @@ import { CheckCircle2, FastForward, Hourglass, Loader2, ShoppingBag, Timer } fro
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
+import { AnimatedProgressBar, RollingNumber } from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { TRIGGER_LABELS } from "@/domain/runway-insights";
 import type { UserProfile, VaultItem } from "@/domain/types";
@@ -60,8 +60,8 @@ export function CoolingItemCard({
     <Card
       className={
         isUnlocked
-          ? "rounded-xl border-emerald-300 bg-emerald-50/40 shadow-[0_2px_6px_rgba(5,150,105,0.08)] transition-shadow duration-200 hover:shadow-[0_6px_18px_-4px_rgba(5,150,105,0.16)]"
-          : "rounded-xl border-amber-200 bg-amber-50/30 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition-shadow duration-200 hover:shadow-[0_6px_16px_-6px_rgba(217,119,6,0.14)]"
+          ? "rounded-xl border-emerald-600/25 bg-white transition-colors duration-150 hover:border-emerald-600/40"
+          : "rounded-xl border-amber-600/25 bg-white transition-colors duration-150 hover:border-amber-600/40"
       }
     >
       <CardContent className="space-y-3 p-4">
@@ -93,8 +93,11 @@ export function CoolingItemCard({
         </div>
 
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-lg font-bold tabular-nums text-slate-900">
-            {formatAmount(item.priceMinor, profile.currency, profile.hourlyRateMinor)}
+          <p className="text-lg font-bold tabular-nums tracking-[-0.025em] text-slate-900">
+            <RollingNumber
+              value={formatAmount(item.priceMinor, profile.currency, profile.hourlyRateMinor)}
+              hierarchy="subtle"
+            />
           </p>
           <p className="text-[11px] tabular-nums text-slate-600">
             Unlocks{" "}

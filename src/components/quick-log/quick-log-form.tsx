@@ -13,6 +13,7 @@ import { buildRunwayPreview, TRIGGER_LABELS, TRIGGER_ORDER } from "@/domain/runw
 import { getQuickLogPresets } from "@/domain/quick-log-presets";
 import { getClientTimeZone } from "@/lib/timezone";
 import { parseExpenseResponseSchema } from "@/lib/schemas";
+import { RollingNumber, SharedPillTabs } from "@/components/shared/motion-primitives";
 import type {
   PaymentMode,
   Transaction,
@@ -29,6 +30,7 @@ interface QuickLogFormProps {
   profile: UserProfile;
   transactions: Transaction[];
   fixedCommitmentsMinor?: number;
+  onTransactionCreated?: (transaction: Transaction) => void;
 }
 
 const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
@@ -40,6 +42,7 @@ export function QuickLogForm({
   profile,
   transactions,
   fixedCommitmentsMinor = 0,
+  onTransactionCreated,
 }: QuickLogFormProps) {
   const { repository, cacheIdentity, isGuest } = useRepository();
   const { formatAmount } = useDisplayPreference();
@@ -89,9 +92,10 @@ export function QuickLogForm({
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.transactions(cacheIdentity) });
       const previous = queryClient.getQueryData<Transaction[]>(queryKeys.transactions(cacheIdentity));
+      const optimisticId = `optimistic-${Date.now()}`;
 
       const optimistic: Transaction = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         userId: profile.userId,
         amountMinor: input.amountMinor,
         note: input.note,
@@ -106,7 +110,7 @@ export function QuickLogForm({
         ...(previous ?? []),
       ]);
 
-      return { previous };
+      return { previous, optimisticId };
     },
 
     onError: (error, _input, context) => {
@@ -118,7 +122,22 @@ export function QuickLogForm({
       );
     },
 
-    onSuccess: (created) => {
+    onSuccess: (created, _input, context) => {
+      queryClient.setQueryData<Transaction[]>(
+        queryKeys.transactions(cacheIdentity),
+        (current) => {
+          if (!current) return [created];
+          const replaced = current.map((tx) =>
+            tx.id === context?.optimisticId ? created : tx
+          );
+          return replaced.some((tx) => tx.id === created.id)
+            ? replaced
+            : [created, ...replaced];
+        }
+      );
+
+      onTransactionCreated?.(created);
+
       toast.success("Expense logged.", {
         description: `${created.note || "Expense"} · ${formatAmount(
           created.amountMinor,
@@ -165,9 +184,9 @@ export function QuickLogForm({
       if (!response.ok) {
         const message =
           payload &&
-          typeof payload === "object" &&
-          "error" in payload &&
-          typeof (payload as { error?: unknown }).error === "string"
+            typeof payload === "object" &&
+            "error" in payload &&
+            typeof (payload as { error?: unknown }).error === "string"
             ? (payload as { error: string }).error
             : "Could not read an amount. Please enter the details manually.";
         setParseError(message);
@@ -223,10 +242,12 @@ export function QuickLogForm({
 
   return (
     <div className="space-y-4">
-      <Card className="border-sky-200 bg-sky-50/40">
+      <Card className="border-slate-900/[0.08] bg-white">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-sky-600" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-sky-600/15 bg-sky-50 text-sky-600">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            </div>
             <CardTitle as="h2" className="text-base">Smart Quick Log</CardTitle>
           </div>
           <CardDescription className="text-xs">
@@ -272,7 +293,7 @@ export function QuickLogForm({
         </CardContent>
       </Card>
 
-      <Card className="border-slate-200">
+      <Card className="border-slate-900/[0.08]">
         <CardHeader className="pb-2">
           <CardTitle as="h2" className="text-base">Expense Details</CardTitle>
           <CardDescription className="text-xs">
@@ -302,7 +323,7 @@ export function QuickLogForm({
                     setFormError(null);
                     setParseError(null);
                   }}
-                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-sky-300 hover:bg-sky-50/70 hover:text-sky-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98] cursor-pointer"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors duration-150 hover:border-sky-600/30 hover:bg-sky-50/70 hover:text-sky-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98] cursor-pointer"
                   aria-label={`Preset: ${preset.label}, ${formatAmount(preset.amountMinor, profile.currency, profile.hourlyRateMinor)}`}
                 >
                   <span aria-hidden="true">{preset.emoji}</span>
@@ -336,24 +357,15 @@ export function QuickLogForm({
 
               <div className="space-y-1.5">
                 <Label id="payment-mode-label">Payment mode</Label>
-                <div role="group" aria-labelledby="payment-mode-label" className="flex gap-2">
-                  {PAYMENT_MODES.map((mode) => (
-                    <button
-                      key={mode.value}
-                      type="button"
-                      onClick={() => setPaymentMode(mode.value)}
-                      className={cn(
-                        "flex-1 min-h-[40px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
-                        paymentMode === mode.value
-                          ? "border-sky-500 bg-sky-50 font-semibold text-sky-900"
-                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                      )}
-                      aria-pressed={paymentMode === mode.value}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
+                <SharedPillTabs
+                  items={PAYMENT_MODES}
+                  value={paymentMode}
+                  onChange={setPaymentMode}
+                  ariaLabelledBy="payment-mode-label"
+                  layoutId="quick-log-payment-mode"
+                  size="md"
+                  fullWidth
+                />
               </div>
             </div>
 
@@ -370,30 +382,29 @@ export function QuickLogForm({
 
             <div className="space-y-2">
               <Label id="behavioral-trigger-label">Behavioral trigger</Label>
-              <div role="group" aria-labelledby="behavioral-trigger-label" className="flex flex-wrap gap-2">
-                {TRIGGER_ORDER.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setTrigger(tag)}
-                    className={cn(
-                      "min-h-[36px] rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
-                      trigger === tag
-                        ? tag === "invest_self"
-                          ? "border-emerald-500 bg-emerald-50 font-semibold text-emerald-900"
-                          : "border-sky-500 bg-sky-50 font-semibold text-sky-900"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                    )}
-                    aria-pressed={trigger === tag}
-                  >
-                    {TRIGGER_LABELS[tag]}
-                  </button>
-                ))}
-              </div>
+              <SharedPillTabs
+                items={TRIGGER_ORDER.map((tag) => ({
+                  value: tag,
+                  label: TRIGGER_LABELS[tag],
+                  activeClassName:
+                    tag === "invest_self"
+                      ? "border-emerald-500/70 text-emerald-900 font-semibold"
+                      : "border-sky-500/70 text-sky-900 font-semibold",
+                  activeIndicatorClassName:
+                    tag === "invest_self"
+                      ? "bg-emerald-50 ring-1 ring-emerald-500/50"
+                      : "bg-sky-50 ring-1 ring-sky-500/50",
+                }))}
+                value={trigger}
+                onChange={setTrigger}
+                ariaLabelledBy="behavioral-trigger-label"
+                layoutId="quick-log-trigger-pill"
+                wrap
+              />
             </div>
 
             {/* Runway impact preview */}
-            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5">
+            <div className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3.5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Runway impact preview
               </p>
@@ -417,17 +428,16 @@ export function QuickLogForm({
                 />
                 <PreviewStat
                   label="Remaining budget change"
-                  value={`${
-                    preview.remainingConsumptionDeltaMinor > 0
-                      ? "+"
-                      : preview.remainingConsumptionDeltaMinor < 0
-                        ? "−"
-                        : ""
-                  }${formatAmount(
-                    Math.abs(preview.remainingConsumptionDeltaMinor),
-                    profile.currency,
-                    profile.hourlyRateMinor
-                  )}`}
+                  value={`${preview.remainingConsumptionDeltaMinor > 0
+                    ? "+"
+                    : preview.remainingConsumptionDeltaMinor < 0
+                      ? "−"
+                      : ""
+                    }${formatAmount(
+                      Math.abs(preview.remainingConsumptionDeltaMinor),
+                      profile.currency,
+                      profile.hourlyRateMinor
+                    )}`}
                   emphasis={preview.remainingConsumptionDeltaMinor < 0 ? "warning" : "neutral"}
                 />
               </div>
@@ -479,7 +489,7 @@ function PreviewStat({
       </p>
       <p
         className={cn(
-          "mt-0.5 truncate text-sm font-semibold tabular-nums",
+          "mt-0.5 truncate text-sm font-semibold tabular-nums tracking-[-0.025em]",
           emphasis === "warning"
             ? "text-amber-700"
             : emphasis === "success"
@@ -487,7 +497,7 @@ function PreviewStat({
               : "text-slate-900"
         )}
       >
-        {value}
+        <RollingNumber value={value} hierarchy="subtle" />
       </p>
     </div>
   );

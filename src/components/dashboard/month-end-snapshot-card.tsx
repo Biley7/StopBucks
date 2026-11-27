@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
+import {
+  AnimatedProgressBar,
+  RollingNumber,
+} from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { TRIGGER_LABELS } from "@/domain/runway-insights";
 import type { MonthEndSnapshot } from "@/domain/runway-insights";
@@ -55,11 +58,11 @@ export function MonthEndSnapshotCard({
     profile.selfInvestTargetMinor > 0;
 
   return (
-    <Card className="border-slate-200 bg-white shadow-xs">
+    <Card className="border-slate-900/[0.08] bg-white">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-sky-600/15 bg-sky-50 text-sky-700">
               <CalendarCheck className="h-5 w-5" />
             </div>
             <div>
@@ -75,7 +78,7 @@ export function MonthEndSnapshotCard({
 
           <div>
             {snapshot.isSurplus ? (
-              <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1">
+              <Badge className="border-emerald-600/20 bg-emerald-50 text-emerald-800 text-xs font-semibold px-2.5 py-1">
                 <TrendingUp className="mr-1 h-3.5 w-3.5" />
                 SURPLUS +
                 {formatAmount(
@@ -85,7 +88,7 @@ export function MonthEndSnapshotCard({
                 )}
               </Badge>
             ) : snapshot.isDeficit ? (
-              <Badge className="border-rose-200 bg-rose-100 text-rose-800 text-xs font-semibold px-2.5 py-1">
+              <Badge className="border-rose-600/20 bg-rose-50 text-rose-800 text-xs font-semibold px-2.5 py-1">
                 <TrendingDown className="mr-1 h-3.5 w-3.5" />
                 DEFICIT -
                 {formatAmount(
@@ -95,7 +98,7 @@ export function MonthEndSnapshotCard({
                 )}
               </Badge>
             ) : (
-              <Badge className="border-slate-200 bg-slate-100 text-slate-800 text-xs font-semibold px-2.5 py-1">
+              <Badge className="border-slate-900/[0.08] bg-slate-100 text-slate-800 text-xs font-semibold px-2.5 py-1">
                 <Scale className="mr-1 h-3.5 w-3.5" />
                 BALANCED
               </Badge>
@@ -108,19 +111,22 @@ export function MonthEndSnapshotCard({
         {/* Metric tiles */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Consumption tile */}
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
+          <div className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Consumption Spend
               </span>
               <Flame className="h-3.5 w-3.5 text-slate-400" />
             </div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-slate-900 sm:text-base">
-              {formatAmount(
-                snapshot.totalConsumptionMinor,
-                profile.currency,
-                profile.hourlyRateMinor
-              )}
+            <div className="mt-1 text-sm font-bold tabular-nums tracking-[-0.025em] text-slate-900 sm:text-base">
+              <RollingNumber
+                value={formatAmount(
+                  snapshot.totalConsumptionMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+                hierarchy="subtle"
+              />
             </div>
             <p className="mt-0.5 text-[11px] text-slate-500">
               of{" "}
@@ -141,7 +147,7 @@ export function MonthEndSnapshotCard({
           </div>
 
           {/* Invest-in-Self tile */}
-          <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/40 p-3">
+          <div className="rounded-xl border border-emerald-600/15 bg-slate-50/90 p-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
                 Invest-in-Self
@@ -152,12 +158,17 @@ export function MonthEndSnapshotCard({
                 <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
               )}
             </div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-emerald-900 sm:text-base">
-              {formatAmount(
-                snapshot.totalSelfInvestMinor,
-                profile.currency,
-                profile.hourlyRateMinor
-              )}
+            <div className="mt-1 text-sm font-bold tabular-nums tracking-[-0.025em] text-emerald-800 sm:text-base">
+              <RollingNumber
+                value={formatAmount(
+                  snapshot.totalSelfInvestMinor,
+                  profile.currency,
+                  profile.hourlyRateMinor
+                )}
+                hierarchy="subtle"
+                symbolClassName="text-emerald-600/75"
+                decimalClassName="text-emerald-600/75"
+              />
             </div>
             <p className="mt-0.5 text-[11px] text-emerald-700">
               of{" "}
@@ -178,14 +189,14 @@ export function MonthEndSnapshotCard({
           </div>
 
           {/* Growth-to-burn ratio tile */}
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
+          <div className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Growth-to-Burn
               </span>
               <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
             </div>
-            <div className="mt-1 text-sm font-bold tabular-nums text-slate-900 sm:text-base">
+            <div className="mt-1 text-sm font-bold tabular-nums tracking-[-0.025em] text-slate-900 sm:text-base">
               {snapshot.growthToBurnRatio.toFixed(2)}x
             </div>
             <p className="mt-0.5 text-[11px] text-slate-500">
@@ -196,7 +207,7 @@ export function MonthEndSnapshotCard({
           </div>
 
           {/* Top Trigger tile */}
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3">
+          <div className="rounded-xl border border-slate-900/[0.05] bg-slate-50/90 p-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Top Consumption

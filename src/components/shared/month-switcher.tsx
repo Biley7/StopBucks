@@ -56,7 +56,7 @@ export function MonthSwitcher({
     <nav
       aria-label="Month navigation"
       className={cn(
-        "inline-flex items-center gap-1 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs",
+        "inline-flex items-center gap-1 rounded-xl border border-slate-900/[0.08] bg-white p-1",
         className
       )}
     >

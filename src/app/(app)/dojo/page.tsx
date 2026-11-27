@@ -25,6 +25,7 @@ import { DojoSkillMap } from "@/components/dojo/dojo-skill-map";
 import { DojoTrophyDrawer } from "@/components/dojo/dojo-trophy-drawer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ShimmerBlock } from "@/components/shared/motion-primitives";
 
 export default function DojoPage() {
   const { repository, cacheIdentity, activeMode } = useRepository();
@@ -268,16 +269,56 @@ export default function DojoPage() {
 function DojoSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Loading StopBucks Dojo">
-      <div className="h-24 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-900/[0.08] bg-white p-4">
+        <ShimmerBlock className="h-7 w-60 rounded-full" />
+        <div className="flex items-center gap-2">
+          <ShimmerBlock className="h-9 w-28 rounded-lg" />
+          <ShimmerBlock className="h-9 w-28 rounded-lg" />
+          <ShimmerBlock className="h-9 w-9 rounded-lg" />
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
-          <div className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-[520px] animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-4 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <ShimmerBlock className="h-5 w-44" />
+              <ShimmerBlock className="h-6 w-20 rounded-lg" />
+            </div>
+            <ShimmerBlock className="h-3.5 w-64 bg-slate-200/50" />
+            <ShimmerBlock className="h-2 w-full rounded-full" />
+          </div>
+          <div className="h-[520px] rounded-2xl border border-slate-900/[0.08] bg-white p-6">
+            <div className="flex flex-col items-center gap-12 pt-8">
+              <ShimmerBlock className="h-16 w-16 rounded-full" />
+              <ShimmerBlock className="h-16 w-16 rounded-full self-end mr-12" />
+              <ShimmerBlock className="h-16 w-16 rounded-full self-start ml-12" />
+              <ShimmerBlock className="h-16 w-16 rounded-full" />
+            </div>
+          </div>
         </div>
-        <div className="space-y-4">
-          <div className="h-44 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-48 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-64 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-4 space-y-3">
+            <ShimmerBlock className="h-4 w-28" />
+            <ShimmerBlock className="h-5 w-full rounded-md" />
+            <ShimmerBlock className="h-2.5 w-full rounded-full" />
+            <div className="grid grid-cols-2 gap-2">
+              <ShimmerBlock className="h-12 rounded-xl bg-slate-100" />
+              <ShimmerBlock className="h-12 rounded-xl bg-slate-100" />
+            </div>
+          </div>
+          <div className="h-48 rounded-2xl border border-slate-900/[0.08] bg-white p-4 space-y-3">
+            <ShimmerBlock className="h-4 w-32" />
+            <ShimmerBlock className="h-5 w-44" />
+            <ShimmerBlock className="h-10 w-full rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-60 rounded-2xl border border-slate-900/[0.08] bg-white p-4 space-y-3">
+            <ShimmerBlock className="h-4 w-32" />
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 9 }).map((_, idx) => (
+                <ShimmerBlock key={idx} className="h-11 rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

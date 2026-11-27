@@ -28,6 +28,7 @@ import {
 } from "@/lib/dojo-map-layout";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { DojoLevelNode } from "./dojo-level-node";
 import { DOJO_WORLD_STYLES } from "./dojo-theme";
 
@@ -77,11 +78,11 @@ function WorldBanner({
   return (
     <div
       className={cn(
-        "rounded-2xl border px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_18px_-6px_rgba(15,23,42,0.07)]",
+        "rounded-2xl border px-4 py-3",
         worldStyle.bannerBorderClass,
         stat.isUnlocked
           ? worldStyle.bannerLeftAccentClass
-          : "border-slate-200 bg-slate-50/95"
+          : "border-slate-900/[0.08] bg-slate-50/95"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -131,22 +132,14 @@ function WorldBanner({
 
       {/* Tactile World Progress Bar */}
       <div className="mt-2.5 flex items-center gap-2.5">
-        <div
-          role="progressbar"
-          aria-label={`World ${world.worldNumber} completion progress`}
-          aria-valuemin={0}
-          aria-valuemax={stat.totalCount}
-          aria-valuenow={stat.completedCount}
-          className="h-2 flex-1 overflow-hidden rounded-full border border-slate-200/80 bg-slate-100"
-        >
-          <div
-            style={{ width: `${pct}%` }}
-            className={cn(
-              "h-full rounded-full transition-all duration-300",
-              stat.isMastered ? "bg-emerald-600" : worldStyle.progressBarClass
-            )}
-          />
-        </div>
+        <AnimatedProgressBar
+          value={pct}
+          ariaLabel={`World ${world.worldNumber} completion progress`}
+          ariaValueNow={stat.completedCount}
+          ariaValueMax={stat.totalCount}
+          trackClassName="h-2 flex-1 border border-slate-900/[0.06] bg-slate-100"
+          barClassName={stat.isMastered ? "bg-emerald-600" : worldStyle.progressBarClass}
+        />
         <span className="w-8 text-right text-[11px] font-bold tabular-nums text-slate-600">
           {pct}%
         </span>
@@ -287,8 +280,13 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
       {/* Responsive Winding S-Curve Game-Board Canvas */}
       <div
         style={{ height: `${layout.canvasHeightPx}px` }}
-        className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-8px_rgba(15,23,42,0.07)]"
+        className="relative w-full overflow-hidden rounded-2xl border border-slate-900/[0.08] bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px]"
       >
+        {/* Softer ambient visual counterpart behind the Dojo map */}
+        <div
+          aria-hidden="true"
+          className="dojo-ambient-drift pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(2,132,199,0.035),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.035),transparent_50%)]"
+        />
         {/* Subtle 3-World Tonal Atmosphere + Corner Emblem Watermarks (strictly z-0 behind board) */}
         {worldZones.map((zone) => {
           const theme = WORLD_WATERMARK[zone.worldId];

@@ -21,7 +21,10 @@ import { getActiveDojoLevel } from "@/lib/dojo-map-layout";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
+import {
+  AnimatedProgressBar,
+  RollingNumber,
+} from "@/components/shared/motion-primitives";
 import {
   DOJO_BELT_STYLES,
   DOJO_WORLD_STYLES,
@@ -104,10 +107,10 @@ export function DojoSideRail({
   return (
     <aside
       aria-label="Dojo Command Rail"
-      className="min-w-0 space-y-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-10.5rem)] lg:overflow-y-auto lg:pr-0.5"
+      className="min-w-0 space-y-3 lg:sticky lg:top-20"
     >
       {/* Card 1: Belt & Rank Progress */}
-      <Card className="border-slate-200/90 bg-white">
+      <Card className="border-slate-900/[0.08] bg-white">
         <CardContent className="space-y-2.5 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -162,8 +165,8 @@ export function DojoSideRail({
             <h2 className="text-base font-extrabold tracking-tight text-slate-900">
               {rank.title}
             </h2>
-            <span className="text-sm font-extrabold tabular-nums text-sky-700">
-              {rank.currentXp.toLocaleString()} XP
+            <span className="text-sm font-extrabold tabular-nums tracking-[-0.025em] text-sky-700">
+              <RollingNumber value={rank.currentXp.toLocaleString()} suffix=" XP" />
             </span>
           </div>
 

@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/stopbucks-logo.png", sizes: "1024x1024", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/stopbucks-logo.png",
+    apple: "/stopbucks-emblem.png",
   },
 };
 
@@ -28,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-950">
+      <body className="min-h-screen bg-[#F7F8FA] text-slate-900 antialiased selection:bg-sky-100 selection:text-sky-950">
         <Providers>{children}</Providers>
       </body>
     </html>

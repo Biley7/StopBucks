@@ -78,7 +78,7 @@ export function ParkImpulseForm({ currency }: { currency?: CurrencyCode }) {
   };
 
   return (
-    <Card className="min-w-0 border-slate-200/80">
+    <Card className="min-w-0 border-slate-900/[0.08]">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Lock className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />

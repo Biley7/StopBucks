@@ -13,7 +13,11 @@ import { ParkImpulseForm } from "@/components/vault/park-impulse-form";
 import { CoolingItemCard } from "@/components/vault/cooling-item-card";
 import { VaultHistory } from "@/components/vault/vault-history";
 import { ImpulseSimulatorDialog } from "@/components/shared/impulse-simulator-dialog";
-import { FadeInSection } from "@/components/shared/motion-primitives";
+import {
+  FadeInSection,
+  RollingNumber,
+  ShimmerBlock,
+} from "@/components/shared/motion-primitives";
 import type { VaultItem } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,14 +101,30 @@ export default function VaultPage() {
   if (profileQuery.isLoading || vaultQuery.isLoading) {
     return (
       <div className="space-y-5" aria-busy="true" aria-label="Loading cool-off vault">
-        <div className="space-y-1.5">
-          <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
-          <div className="h-4 w-64 animate-pulse rounded bg-slate-100" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <ShimmerBlock className="h-7 w-56" />
+            <ShimmerBlock className="h-4 w-64 bg-slate-200/50" />
+          </div>
+          <ShimmerBlock className="h-9 w-36 rounded-lg" />
         </div>
-        <div className="h-28 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-3">
+          <ShimmerBlock className="h-3.5 w-28" />
+          <ShimmerBlock className="h-10 w-44" />
+          <ShimmerBlock className="h-4 w-72 bg-slate-200/50" />
+        </div>
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="h-72 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
-          <div className="h-72 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="h-80 rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+            <ShimmerBlock className="h-5 w-36" />
+            <ShimmerBlock className="h-10 w-full rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-10 w-full rounded-lg bg-slate-100" />
+            <ShimmerBlock className="h-10 w-full rounded-lg bg-slate-100" />
+          </div>
+          <div className="h-80 rounded-2xl border border-slate-900/[0.08] bg-white p-6 space-y-4">
+            <ShimmerBlock className="h-5 w-32" />
+            <ShimmerBlock className="h-32 w-full rounded-xl bg-slate-100" />
+            <ShimmerBlock className="h-32 w-full rounded-xl bg-slate-100" />
+          </div>
         </div>
       </div>
     );
@@ -183,26 +203,35 @@ export default function VaultPage() {
 
       {/* Money Rescued hero */}
       <FadeInSection>
-        <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
+        <Card className="border-emerald-600/20 bg-white">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-600/15 bg-emerald-50 text-emerald-700">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              </div>
               <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
                 Money Rescued
               </CardDescription>
             </div>
-            <CardTitle as="h2" className="text-3xl font-extrabold tracking-tight tabular-nums text-emerald-950 sm:text-4xl">
-              {formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
+            <CardTitle as="h2" className="mt-1 text-3xl font-extrabold tracking-[-0.025em] tabular-nums text-slate-900 sm:text-4xl">
+              <RollingNumber
+                value={formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
+                hierarchy="prominent"
+              />
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs tabular-nums text-emerald-900">
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs tabular-nums text-slate-700">
             <span>
               {rescuedCount} impulse{rescuedCount === 1 ? "" : "s"} released after cooling
             </span>
             {cooling.length > 0 && (
-              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
+              <span className="rounded-full border border-amber-600/20 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
                 {cooling.length} currently cooling (
-                {formatAmount(coolingTotalMinor, profile.currency, profile.hourlyRateMinor)})
+                <RollingNumber
+                  value={formatAmount(coolingTotalMinor, profile.currency, profile.hourlyRateMinor)}
+                  hierarchy="none"
+                />
+                )
               </span>
             )}
             <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
@@ -216,7 +245,7 @@ export default function VaultPage() {
       <FadeInSection delay={0.05} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ParkImpulseForm currency={profile.currency} />
 
-        <Card className="min-w-0 border-slate-200/80">
+        <Card className="min-w-0 border-slate-900/[0.08]">
           <CardHeader className="pb-3">
             <CardTitle as="h2" className="text-base">Cooling Off</CardTitle>
             <CardDescription className="text-xs">

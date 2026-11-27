@@ -2,7 +2,10 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
+import {
+  AnimatedProgressBar,
+  RollingNumber,
+} from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import type { TriggerBreakdownEntry } from "@/domain/runway-insights";
 import type { UserProfile } from "@/domain/types";
@@ -25,7 +28,7 @@ export function TriggerBreakdown({ entries, profile }: TriggerBreakdownProps) {
   const hasSpending = entries.some((entry) => entry.totalMinor > 0);
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-slate-900/[0.08]">
       <CardHeader className="pb-2">
         <CardTitle as="h2" className="text-base">Behavioral Trigger Breakdown</CardTitle>
         <CardDescription className="text-xs">
@@ -35,7 +38,7 @@ export function TriggerBreakdown({ entries, profile }: TriggerBreakdownProps) {
       </CardHeader>
       <CardContent>
         {!hasSpending ? (
-          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-4 py-8 text-center text-xs text-slate-500">
+          <p className="rounded-xl border border-dashed border-slate-900/[0.12] bg-slate-50/90 px-4 py-8 text-center text-xs text-slate-500">
             No spending recorded yet. Trigger patterns appear after your first log.
           </p>
         ) : (
@@ -44,12 +47,15 @@ export function TriggerBreakdown({ entries, profile }: TriggerBreakdownProps) {
               <div key={entry.trigger}>
                 <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
                   <span className="font-medium text-slate-800">{entry.label}</span>
-                  <span className="tabular-nums text-slate-700">
-                    {formatAmount(
-                      entry.totalMinor,
-                      profile.currency,
-                      profile.hourlyRateMinor
-                    )}{" "}
+                  <span className="tabular-nums tracking-[-0.025em] text-slate-700">
+                    <RollingNumber
+                      value={formatAmount(
+                        entry.totalMinor,
+                        profile.currency,
+                        profile.hourlyRateMinor
+                      )}
+                      hierarchy="subtle"
+                    />{" "}
                     <span className="text-[11px] text-slate-500">
                       · {entry.count} txn{entry.count === 1 ? "" : "s"}
                     </span>

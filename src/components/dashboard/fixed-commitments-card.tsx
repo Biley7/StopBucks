@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RollingNumber } from "@/components/shared/motion-primitives";
 
 interface FixedCommitmentsCardProps {
   profile: UserProfile;
@@ -149,11 +150,11 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
   };
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-slate-900/[0.08]">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-600/15 bg-sky-50 text-sky-600">
               <Receipt className="h-4 w-4" />
             </div>
             <div>
@@ -171,12 +172,15 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
               <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Total Reserved
               </div>
-              <div className="text-sm font-bold tabular-nums text-slate-900 sm:text-base">
-                {formatAmount(
-                  totalCommitmentsMinor,
-                  profile.currency,
-                  profile.hourlyRateMinor
-                )}
+              <div className="text-sm font-bold tabular-nums tracking-[-0.025em] text-slate-900 sm:text-base">
+                <RollingNumber
+                  value={formatAmount(
+                    totalCommitmentsMinor,
+                    profile.currency,
+                    profile.hourlyRateMinor
+                  )}
+                  hierarchy="subtle"
+                />
               </div>
             </div>
 

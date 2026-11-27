@@ -26,6 +26,7 @@ import {
 import { useRepository } from "@/repositories/repository-provider";
 import { createClient } from "@/lib/supabase/client";
 import { BrandMark } from "@/components/shared/brand-mark";
+import { LandingAmbientMotion } from "@/components/shared/landing-ambient-motion";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -80,9 +81,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F4F6F8]">
+    <div className="flex min-h-screen flex-col bg-[#F7F8FA]">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-slate-900/[0.08] bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
             <BrandMark size="md" showWordmark />
@@ -115,8 +116,11 @@ export default function LandingPage() {
 
       {/* Hero + Product Pillars */}
       <main className="flex-1">
-        <section className="px-4 pt-8 pb-14 sm:px-6 sm:pt-12 sm:pb-20 lg:pt-14 lg:pb-24">
-          <div className="mx-auto max-w-4xl text-center">
+        <section className="relative overflow-hidden px-4 pt-8 pb-14 sm:px-6 sm:pt-12 sm:pb-20 lg:pt-14 lg:pb-24">
+          <LandingAmbientMotion />
+
+          <div className="relative z-10">
+            <div className="mx-auto max-w-4xl text-center">
             <div className="mb-4 flex justify-center">
               <BrandMark size="lg" showWordmark={false} />
             </div>
@@ -177,9 +181,9 @@ export default function LandingPage() {
           <div className="mx-auto mt-12 max-w-5xl sm:mt-16">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
               {/* Pillar 1: Daily Safe-to-Spend Runway */}
-              <Card className="flex flex-col border-slate-200/80 bg-white transition-shadow hover:shadow-sm">
+              <Card className="flex flex-col border-slate-900/[0.08] bg-white transition-colors duration-150 hover:border-slate-900/[0.15]">
                 <CardHeader className="pb-3">
-                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700 ring-1 ring-sky-100">
+                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl border border-sky-600/15 bg-sky-50 text-sky-700">
                     <TrendingUp className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <CardTitle as="h2" className="text-base font-bold sm:text-lg">
@@ -196,9 +200,9 @@ export default function LandingPage() {
               </Card>
 
               {/* Pillar 2: 48h Cool-Off Vault */}
-              <Card className="flex flex-col border-slate-200/80 bg-white transition-shadow hover:shadow-sm">
+              <Card className="flex flex-col border-slate-900/[0.08] bg-white transition-colors duration-150 hover:border-slate-900/[0.15]">
                 <CardHeader className="pb-3">
-                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700 ring-1 ring-amber-100">
+                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl border border-amber-600/15 bg-amber-50 text-amber-700">
                     <Hourglass className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <CardTitle as="h2" className="text-base font-bold sm:text-lg">
@@ -215,9 +219,9 @@ export default function LandingPage() {
               </Card>
 
               {/* Pillar 3: 12-Study Behavioral Dojo */}
-              <Card className="flex flex-col border-slate-200/80 bg-white transition-shadow hover:shadow-sm">
+              <Card className="flex flex-col border-slate-900/[0.08] bg-white transition-colors duration-150 hover:border-slate-900/[0.15]">
                 <CardHeader className="pb-3">
-                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                  <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-600/15 bg-emerald-50 text-emerald-700">
                     <Swords className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <CardTitle as="h2" className="text-base font-bold sm:text-lg">
@@ -236,7 +240,7 @@ export default function LandingPage() {
           </div>
 
           {/* Supporting Philosophy & Bias Radar Strip */}
-          <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:mt-12 sm:p-8">
+          <div className="mx-auto mt-10 max-w-5xl rounded-2xl border border-slate-900/[0.08] bg-white p-6 sm:mt-12 sm:p-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-2xl space-y-1.5">
                 <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-700">
@@ -262,13 +266,14 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
+          </div>
         </section>
       </main>
 
       {/* Footer */}
       <footer className="border-t border-slate-200/80 bg-white py-6 sm:py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-center text-xs text-slate-600 sm:flex-row sm:px-6 sm:text-left">
-          <p>© {new Date().getFullYear()} StopBucks. Built for college &amp; university students.</p>
+          <p>© {new Date().getFullYear()} StopBucks. biley7 · Built for college &amp; university students.</p>
           <div className="flex items-center gap-4">
             <button
               type="button"

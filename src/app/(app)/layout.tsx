@@ -11,24 +11,22 @@ export default function AppLayout({
 }) {
   return (
     <AccessGate>
-      <div className="flex min-h-dvh flex-col bg-[#F4F6F8] md:h-dvh md:overflow-hidden">
-        {/* Compact Guest Sandbox Banner with working Reset Demo */}
-        <GuestBanner />
+      <div className="flex min-h-dvh flex-col overflow-x-clip bg-[#F7F8FA] md:flex-row">
+        {/* Desktop Sidebar Navigation */}
+        <AppSidebar />
 
-        <div className="flex min-h-0 flex-1">
-          {/* Desktop Sidebar Navigation */}
-          <AppSidebar />
+        {/* Right Content Column */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Compact Guest Sandbox Banner with working Reset Demo */}
+          <GuestBanner />
 
-          {/* Main Content Area */}
-          <div className="flex min-w-0 flex-1 flex-col overflow-x-clip md:overflow-hidden">
-            {/* Top Bar with Pain-of-Paying Switcher */}
-            <AppTopbar />
+          {/* Top Bar with Pain-of-Paying Switcher */}
+          <AppTopbar />
 
-            {/* Page Content Viewport */}
-            <main className="min-w-0 flex-1 bg-[radial-gradient(#cbd5e1_0.8px,transparent_0.8px)] [background-size:24px_24px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-6 md:min-h-0 md:overflow-y-auto md:pb-10">
-              <div className="mx-auto max-w-6xl min-w-0">{children}</div>
-            </main>
-          </div>
+          {/* Page Content Viewport */}
+          <main className="min-w-0 flex-1 bg-[#F7F8FA] px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:px-6 sm:pt-6 md:pb-10">
+            <div className="mx-auto max-w-6xl min-w-0">{children}</div>
+          </main>
         </div>
 
         {/* Mobile Fixed Bottom Navigation */}

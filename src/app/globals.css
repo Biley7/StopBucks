@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    --background: #f4f6f8;
+    --background: #f7f8fa;
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #0f172a;
@@ -18,8 +18,8 @@
     --accent-foreground: #0f172a;
     --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --border: #e2e8f0;
-    --input: #e2e8f0;
+    --border: rgba(15, 23, 42, 0.08);
+    --input: rgba(15, 23, 42, 0.12);
     --ring: #0284c7;
     --radius: 0.75rem;
   }
@@ -49,9 +49,132 @@
   animation: dojo-connector-flow 2.2s linear infinite;
 }
 
+@keyframes hero-ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(-1.5%, -1%, 0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(1.5%, 1%, 0);
+    opacity: 0.8;
+  }
+}
+
+@keyframes hero-ambient-sheen {
+  0% {
+    transform: translate3d(-35%, 0, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translate3d(35%, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes dojo-ambient-drift {
+  0%,
+  100% {
+    transform: translate3d(0, -0.75%, 0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate3d(0, 0.75%, 0);
+    opacity: 0.6;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes landing-token-drift {
+  0% {
+    transform: translate3d(0, -10vh, 0) rotate(var(--token-rot-start, -6deg));
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--token-opacity, 0.68);
+  }
+  35% {
+    transform: translate3d(var(--token-sway-x, 8px), 32vh, 0)
+      rotate(var(--token-rot-mid, 5deg));
+    opacity: var(--token-opacity, 0.68);
+  }
+  70% {
+    transform: translate3d(calc(var(--token-sway-x, 8px) * -0.75), 74vh, 0)
+      rotate(var(--token-rot-start, -6deg));
+    opacity: var(--token-opacity, 0.68);
+  }
+  88% {
+    opacity: var(--token-opacity, 0.68);
+  }
+  100% {
+    transform: translate3d(calc(var(--token-sway-x, 8px) * 0.25), 110vh, 0)
+      rotate(var(--token-rot-end, 6deg));
+    opacity: 0;
+  }
+}
+
+.landing-ambient-token {
+  animation-name: landing-token-drift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+.hero-ambient-drift {
+  animation: hero-ambient-drift 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.hero-ambient-sheen {
+  animation: hero-ambient-sheen 12s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform, opacity;
+}
+
+.dojo-ambient-drift {
+  animation: dojo-ambient-drift 20s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .dojo-connector-active {
+  .dojo-connector-active,
+  .hero-ambient-drift,
+  .hero-ambient-sheen,
+  .dojo-ambient-drift,
+  .landing-ambient-token,
+  .skeleton-shimmer::after {
     animation: none !important;
+  }
+
+  .skeleton-shimmer::after {
+    display: none;
   }
 
   *,

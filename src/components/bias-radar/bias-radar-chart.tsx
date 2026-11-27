@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useReducedMotion } from "framer-motion";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -18,6 +19,9 @@ interface BiasRadarChartProps {
 }
 
 export function BiasRadarChart({ bias }: BiasRadarChartProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldReduceMotion = Boolean(prefersReducedMotion);
+
   const data = [
     { axis: "Late-Night", score: bias.lateNightDrift.score },
     { axis: "Cashless", score: bias.cashlessNumbness.score },
@@ -28,7 +32,7 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
   const hasSignal = data.some((entry) => entry.score > 0);
 
   return (
-    <Card className="border-slate-200">
+    <Card className="border-slate-900/[0.08]">
       <CardHeader className="pb-1">
         <CardTitle as="h2" className="text-base">Behavioral Footprint</CardTitle>
         <CardDescription className="text-xs">
@@ -37,7 +41,7 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
       </CardHeader>
       <CardContent>
         {!hasSignal ? (
-          <div className="flex h-56 flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-6 text-center">
+          <div className="flex h-56 flex-col items-center justify-center rounded-xl border border-dashed border-slate-900/[0.12] bg-slate-50/90 px-6 text-center">
             <p className="text-sm font-medium text-slate-700">Not enough signal yet</p>
             <p className="mt-1 text-xs text-slate-500">
               Log a few expenses and your four-axis pattern will appear here.
@@ -68,7 +72,14 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
                   stroke="#e2e8f0"
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
+                  isAnimationActive={false}
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: "1px solid rgba(15, 23, 42, 0.08)",
+                    fontSize: 12,
+                    backgroundColor: "rgba(255, 255, 255, 0.96)",
+                    boxShadow: "0 2px 8px rgba(15, 23, 42, 0.06)",
+                  }}
                   formatter={(value) => [`${Number(value)} / 100`, "Score"]}
                 />
                 <Radar
@@ -77,15 +88,33 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
                   stroke="#0284c7"
                   strokeWidth={2}
                   fill="#0284c7"
-                  fillOpacity={0.2}
-                  isAnimationActive={false}
+                  fillOpacity={0.18}
+                  dot={{ r: 3, fill: "#0284c7", stroke: "#ffffff", strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, fill: "#0284c7", stroke: "#ffffff", strokeWidth: 2 }}
+                  isAnimationActive={!shouldReduceMotion}
+                  animationBegin={0}
+                  animationDuration={450}
+                  animationEasing="ease-out"
                 />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        <p className="mt-2 text-center text-xs text-slate-600">
+        {/* Non-hover accessible score readout */}
+        <div className="mt-2 grid grid-cols-2 gap-1.5 text-[11px] sm:grid-cols-4 lg:grid-cols-2">
+          {data.map((item) => (
+            <div
+              key={item.axis}
+              className="flex items-center justify-between rounded-lg border border-slate-900/[0.05] bg-slate-50/90 px-2.5 py-1"
+            >
+              <span className="truncate text-slate-600">{item.axis}</span>
+              <span className="font-semibold tabular-nums text-slate-900">{item.score}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-2.5 text-center text-xs text-slate-600">
           Overall behavioral risk score:{" "}
           <span className="font-semibold tabular-nums text-slate-900">
             {bias.overallRiskScore}/100
