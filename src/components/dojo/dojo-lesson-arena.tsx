@@ -446,7 +446,7 @@ export function DojoLessonArena({
       className="fixed inset-0 z-50 flex h-dvh flex-col overflow-hidden bg-slate-50 text-slate-900 outline-none"
     >
       {/* Top Sticky Arena HUD */}
-      <header className="shrink-0 border-b border-slate-200 bg-white px-3 py-2.5 sm:px-6 sm:py-3">
+      <header className="shrink-0 border-b border-slate-200 bg-white px-2.5 py-2.5 sm:px-6 sm:py-3">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 sm:gap-4">
           {/* Exit Control */}
           <Button
@@ -463,7 +463,7 @@ export function DojoLessonArena({
 
           {/* Segmented 5-Beat Progress Bar */}
           <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center justify-between gap-2 text-[11px] font-semibold">
+            <div className="flex items-center justify-between gap-1.5 text-[11px] font-semibold">
               <span className="truncate text-slate-700">
                 L{level.id} · {BEAT_LABELS[beat]}
               </span>

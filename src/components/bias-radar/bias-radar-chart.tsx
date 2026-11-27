@@ -30,7 +30,7 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
   return (
     <Card className="border-slate-200">
       <CardHeader className="pb-1">
-        <CardTitle className="text-base">Behavioral Footprint</CardTitle>
+        <CardTitle as="h2" className="text-base">Behavioral Footprint</CardTitle>
         <CardDescription className="text-xs">
           Four deterministic detectors, scored 0–100 from your recorded transactions.
         </CardDescription>
@@ -50,21 +50,25 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
             aria-label={`Radar chart showing behavioral bias scores: Late-Night Drift ${bias.lateNightDrift.score} of 100, Cashless Numbness ${bias.cashlessNumbness.score} of 100, Payday Burn ${bias.paydayBurn.score} of 100, Social FOMO ${bias.socialFomo.score} of 100. Overall risk score is ${bias.overallRiskScore} of 100.`}
           >
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={data} outerRadius="72%">
+              <RadarChart
+                data={data}
+                outerRadius="56%"
+                margin={{ top: 12, right: 36, bottom: 12, left: 36 }}
+              >
                 <PolarGrid stroke="#e2e8f0" />
                 <PolarAngleAxis
                   dataKey="axis"
-                  tick={{ fontSize: 11, fill: "#475569" }}
+                  tick={{ fontSize: 10, fill: "#475569" }}
                 />
                 <PolarRadiusAxis
                   angle={90}
                   domain={[0, 100]}
-                  tick={{ fontSize: 9, fill: "#94a3b8" }}
+                  tick={{ fontSize: 9, fill: "#64748b" }}
                   tickCount={5}
                   stroke="#e2e8f0"
                 />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e2e8f0", fontSize: 12 }}
+                  contentStyle={{ borderRadius: 10, border: "1px solid #e2e8f0", fontSize: 12 }}
                   formatter={(value) => [`${Number(value)} / 100`, "Score"]}
                 />
                 <Radar
@@ -81,9 +85,11 @@ export function BiasRadarChart({ bias }: BiasRadarChartProps) {
           </div>
         )}
 
-        <p className="mt-2 text-center text-[11px] text-slate-500">
+        <p className="mt-2 text-center text-xs text-slate-600">
           Overall behavioral risk score:{" "}
-          <span className="font-semibold text-slate-800">{bias.overallRiskScore}/100</span>
+          <span className="font-semibold tabular-nums text-slate-900">
+            {bias.overallRiskScore}/100
+          </span>
         </p>
       </CardContent>
     </Card>

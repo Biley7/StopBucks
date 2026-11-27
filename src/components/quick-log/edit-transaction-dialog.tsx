@@ -139,6 +139,7 @@ export function EditTransactionDialog({
                 id="edit-amount"
                 inputMode="decimal"
                 placeholder="0.00"
+                className="tabular-nums"
                 value={amountText}
                 onChange={(e) => setAmountText(e.target.value)}
               />
@@ -157,9 +158,9 @@ export function EditTransactionDialog({
                     type="button"
                     onClick={() => setPaymentMode(mode.value)}
                     className={cn(
-                      "flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors",
+                      "flex-1 min-h-[40px] rounded-lg border px-3 py-2 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                       paymentMode === mode.value
-                        ? "border-sky-500 bg-sky-50 text-sky-800"
+                        ? "border-sky-500 bg-sky-50 font-semibold text-sky-900"
                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                     )}
                     aria-pressed={paymentMode === mode.value}
@@ -195,11 +196,11 @@ export function EditTransactionDialog({
                   type="button"
                   onClick={() => setTriggerTag(tag)}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
+                    "min-h-[34px] rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                     triggerTag === tag
                       ? tag === "invest_self"
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                        : "border-sky-500 bg-sky-50 text-sky-800"
+                        ? "border-emerald-500 bg-emerald-50 font-semibold text-emerald-900"
+                        : "border-sky-500 bg-sky-50 font-semibold text-sky-900"
                       : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   )}
                   aria-pressed={triggerTag === tag}

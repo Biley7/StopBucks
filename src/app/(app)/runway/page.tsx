@@ -231,7 +231,7 @@ function RunwayDashboard({
               ? "How much can I safely spend today?"
               : `Runway Review · ${selectedMonthName}`}
           </h1>
-          <p className="text-xs text-slate-500 sm:text-sm">
+          <p className="mt-0.5 text-xs tabular-nums text-slate-600 sm:text-sm">
             {isCurrentMonth ? (
               <>
                 {profile.currency} · {liveRunway.daysRemainingInMonth} days left ·{" "}
@@ -286,17 +286,17 @@ function RunwayDashboard({
           trigger={
             <button
               type="button"
-              className="flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-left transition hover:bg-sky-50 hover:border-sky-300 cursor-pointer w-full"
+              className="group flex w-full items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 text-left shadow-2xs transition-colors hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                <Sparkles className="h-4.5 w-4.5" />
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
                   <h3 className="text-sm font-semibold text-slate-900">Should I Buy This?</h3>
-                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-sky-500 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </div>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs leading-snug text-slate-600">
                   Simulate days of runway consumed before you spend.
                 </p>
               </div>
@@ -305,19 +305,19 @@ function RunwayDashboard({
         />
         <QuickAction
           href="/log"
-          icon={<PlusCircle className="h-4 w-4" />}
+          icon={<PlusCircle className="h-4 w-4" aria-hidden="true" />}
           title="Log an expense"
           description="Capture the amount and the trigger behind it."
         />
         <QuickAction
           href="/vault"
-          icon={<Hourglass className="h-4 w-4" />}
+          icon={<Hourglass className="h-4 w-4" aria-hidden="true" />}
           title="Pause an impulse"
           description="Park it for 48 hours before deciding."
         />
         <QuickAction
           href="/radar"
-          icon={<Compass className="h-4 w-4" />}
+          icon={<Compass className="h-4 w-4" aria-hidden="true" />}
           title="View behavioral insights"
           description="See which patterns shape your spending."
         />
@@ -340,17 +340,17 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-sky-300 hover:bg-sky-50/40"
+      className="group flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs transition-colors hover:border-sky-300 hover:bg-sky-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
     >
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
         {icon}
       </span>
-      <span className="min-w-0">
-        <span className="flex items-center gap-1 text-sm font-semibold text-slate-900">
-          {title}
-          <ArrowRight className="h-3.5 w-3.5 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-600" />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-1 text-sm font-semibold text-slate-900">
+          <span className="truncate">{title}</span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-600" aria-hidden="true" />
         </span>
-        <span className="mt-0.5 block text-xs text-slate-500">{description}</span>
+        <span className="mt-0.5 block text-xs leading-snug text-slate-500">{description}</span>
       </span>
     </Link>
   );
@@ -358,14 +358,17 @@ function QuickAction({
 
 function RunwaySkeleton() {
   return (
-    <div className="space-y-4">
-      <div className="h-6 w-64 animate-pulse rounded bg-slate-200" />
-      <div className="h-48 animate-pulse rounded-xl border border-slate-200 bg-white" />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-56 animate-pulse rounded-xl border border-slate-200 bg-white" />
-        <div className="h-56 animate-pulse rounded-xl border border-slate-200 bg-white" />
+    <div className="space-y-5" aria-busy="true" aria-label="Loading daily runway">
+      <div className="space-y-1.5">
+        <div className="h-7 w-64 animate-pulse rounded-lg bg-slate-200" />
+        <div className="h-4 w-48 animate-pulse rounded bg-slate-100" />
       </div>
-      <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      <div className="h-52 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+      <div className="h-36 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="h-56 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="h-56 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+      </div>
     </div>
   );
 }

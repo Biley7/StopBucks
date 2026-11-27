@@ -192,13 +192,13 @@ export function PersonalMirrorCard({
       {/* Loading State — never fabricate metrics while queries resolve */}
       {isLoading && (
         <Card
-          className="border-slate-200 bg-white"
+          className="border-slate-200/80 bg-white"
           aria-busy="true"
           aria-label="Loading your live wallet mirror"
         >
           <CardContent className="space-y-4 p-5">
-            <div className="h-5 w-48 animate-pulse rounded bg-slate-200" />
-            <div className="h-14 w-full animate-pulse rounded-lg bg-slate-100" />
+            <div className="h-5 w-48 animate-pulse rounded-lg bg-slate-200" />
+            <div className="h-14 w-full animate-pulse rounded-xl bg-slate-100" />
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
               <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
@@ -262,7 +262,7 @@ export function PersonalMirrorCard({
             <CardContent className="space-y-4 p-5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="space-y-1">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                     YOUR LIVE WALLET MIRROR
                   </div>
                   <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">

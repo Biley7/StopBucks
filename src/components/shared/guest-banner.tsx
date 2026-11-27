@@ -28,12 +28,16 @@ export function GuestBanner() {
   };
 
   return (
-    <div className="border-b border-amber-200/80 bg-amber-50/90 px-4 py-2 text-xs text-amber-900">
+    <div className="shrink-0 border-b border-amber-200/80 bg-amber-50/90 px-3.5 py-1.5 text-xs text-amber-950 sm:px-6 sm:py-2">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
-          <span>
-            <strong>Guest Sandbox Mode:</strong> Exploring with preloaded 30-day student financial data.
+        <div className="flex min-w-0 items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-600 sm:h-4 sm:w-4" aria-hidden="true" />
+          <span className="truncate">
+            <strong>Guest Sandbox:</strong>{" "}
+            <span className="hidden sm:inline">
+              Exploring with preloaded 30-day student financial data.
+            </span>
+            <span className="sm:hidden">Preloaded 30-day demo data</span>
           </span>
         </div>
 
@@ -42,9 +46,9 @@ export function GuestBanner() {
           variant="outline"
           onClick={handleReset}
           disabled={isResetting}
-          className="h-7 border-amber-300 bg-white px-2.5 text-xs text-amber-900 hover:bg-amber-100/50"
+          className="h-7 shrink-0 border-amber-300 bg-white px-2.5 text-[11px] font-medium text-amber-950 hover:bg-amber-100/60 focus-visible:ring-amber-500 sm:text-xs"
         >
-          <RotateCcw className={`mr-1.5 h-3 w-3 ${isResetting ? "animate-spin" : ""}`} />
+          <RotateCcw className={`h-3 w-3 ${isResetting ? "animate-spin" : ""}`} aria-hidden="true" />
           {isResetting ? "Resetting..." : "Reset Demo"}
         </Button>
       </div>

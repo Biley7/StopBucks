@@ -103,11 +103,11 @@ export function DojoSideRail({
   return (
     <aside
       aria-label="Dojo Command Rail"
-      className="min-w-0 space-y-4"
+      className="min-w-0 space-y-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-10.5rem)] lg:overflow-y-auto lg:pr-0.5"
     >
       {/* Card 1: Belt & Rank Progress */}
       <Card className="border-slate-200/90 bg-white shadow-xs">
-        <CardContent className="space-y-3.5 p-4">
+        <CardContent className="space-y-2.5 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Belt &amp; Rank
@@ -221,7 +221,7 @@ export function DojoSideRail({
 
       {/* Card 2: Next Up Spotlight */}
       <Card className="border-slate-200/90 bg-white shadow-xs">
-        <CardContent className="space-y-3 p-4">
+        <CardContent className="space-y-2.5 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Next Up Spotlight
@@ -287,7 +287,7 @@ export function DojoSideRail({
               <Button
                 type="button"
                 onClick={() => onSelectLevel(activeLevel.id)}
-                className="h-10 w-full gap-2 border-b-[3px] border-b-sky-800 bg-sky-600 text-xs font-bold text-white hover:bg-sky-500 active:translate-y-px sm:text-sm"
+                className="h-10 w-full gap-2 border-b-[3px] border-b-sky-950 bg-sky-700 text-xs font-bold text-white hover:bg-sky-800 active:translate-y-px sm:text-sm"
               >
                 <Swords className="h-4 w-4" aria-hidden="true" />
                 <span>Launch Level {activeLevel.id}</span>
@@ -314,7 +314,7 @@ export function DojoSideRail({
 
       {/* Card 3: Badge Showcase Preview */}
       <Card className="border-slate-200/90 bg-white shadow-xs">
-        <CardContent className="space-y-3.5 p-4">
+        <CardContent className="space-y-3 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               Badge Showcase

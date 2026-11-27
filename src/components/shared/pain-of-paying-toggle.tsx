@@ -15,22 +15,28 @@ export function PainOfPayingToggle() {
   ];
 
   return (
-    <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs font-medium">
+    <div
+      role="group"
+      aria-label="Display unit mode"
+      className="flex items-center rounded-xl border border-slate-200 bg-slate-100/90 p-0.5 text-xs font-medium"
+    >
       {options.map((opt) => {
         const isActive = displayMode === opt.mode;
         return (
           <button
             key={opt.mode}
             type="button"
+            aria-pressed={isActive}
+            aria-label={opt.label}
             onClick={() => setDisplayMode(opt.mode)}
-            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-all cursor-pointer select-none ${
+            className={`inline-flex h-7 items-center gap-1.5 rounded-lg px-2 transition-all cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 sm:px-2.5 ${
               isActive
-                ? "bg-white text-slate-900 shadow-sm font-semibold"
-                : "text-slate-500 hover:text-slate-900"
+                ? "bg-white text-slate-900 shadow-2xs font-semibold"
+                : "text-slate-600 hover:text-slate-900"
             }`}
             title={`Switch display unit to ${opt.label}`}
           >
-            {opt.icon}
+            <span aria-hidden="true">{opt.icon}</span>
             <span className="hidden sm:inline">{opt.label}</span>
           </button>
         );

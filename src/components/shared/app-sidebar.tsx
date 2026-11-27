@@ -74,16 +74,19 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:inset-y-0 border-r border-slate-200 bg-white">
+    <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col border-r border-slate-200/90 bg-white">
       {/* Brand Header */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6">
-        <Link href="/runway" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 font-bold text-white shadow-sm">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 px-5">
+        <Link
+          href="/runway"
+          className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-700 font-bold text-white shadow-xs">
             SB
           </div>
           <div>
             <span className="font-bold text-slate-900 tracking-tight">StopBucks</span>
-            <span className="block text-[10px] uppercase font-semibold text-sky-600 tracking-wider">
+            <span className="block text-[10px] uppercase font-semibold text-sky-700 tracking-wider">
               Behavioral Finance
             </span>
           </div>
@@ -91,9 +94,9 @@ export function AppSidebar() {
       </div>
 
       {/* Nav List */}
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <nav className="space-y-1.5">
-          <div className="px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+      <div className="flex flex-1 flex-col justify-between overflow-y-auto p-4">
+        <nav aria-label="Workspace navigation" className="space-y-1">
+          <div className="px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
             Core Modules
           </div>
           {NAV_ITEMS.map((item) => {
@@ -106,17 +109,18 @@ export function AppSidebar() {
                 href={item.href}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                   isActive
-                    ? "bg-sky-50 text-sky-700 font-semibold shadow-xs"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "bg-sky-50 text-sky-800 font-semibold shadow-2xs ring-1 ring-sky-200/70"
+                    : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
                 )}
               >
                 <Icon
                   className={cn(
                     "h-4 w-4 shrink-0",
-                    isActive ? "text-sky-600" : "text-slate-400"
+                    isActive ? "text-sky-600" : "text-slate-500"
                   )}
+                  aria-hidden="true"
                 />
                 <span>{item.name}</span>
               </Link>
@@ -125,23 +129,23 @@ export function AppSidebar() {
         </nav>
 
         {/* Footer info & Profile settings */}
-        <div className="space-y-3 pt-4 border-t border-slate-200">
+        <div className="space-y-3 pt-4 border-t border-slate-200/80">
           <Link
             href="/onboarding"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            className="flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100/80 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
           >
-            <Sliders className="h-4 w-4 text-slate-400" />
-            <span>Budget & Rate Baseline</span>
+            <Sliders className="h-4 w-4 text-slate-500" aria-hidden="true" />
+            <span>Budget &amp; Rate Baseline</span>
           </Link>
 
-          <div className="rounded-lg bg-slate-50 p-3 text-xs border border-slate-200/60">
-            <div className="flex items-center gap-2">
-              <User className="h-3.5 w-3.5 text-slate-500" />
-              <span className="font-medium text-slate-700 truncate">
+          <div className="rounded-xl bg-slate-50 p-3 text-xs border border-slate-200/80">
+            <div className="flex items-center gap-2 min-w-0">
+              <User className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden="true" />
+              <span className="font-medium text-slate-800 truncate">
                 {isGuest ? "Guest Sandbox User" : user?.email || "Authenticated Student"}
               </span>
             </div>
-            <div className="mt-1">
+            <div className="mt-1.5">
               <span className="inline-block rounded-full bg-slate-200/80 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
                 {isGuest ? "Session Sandbox" : "Supabase PostgreSQL"}
               </span>

@@ -9,7 +9,6 @@ import {
   Sparkles,
   TrendingDown,
   TrendingUp,
-  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,7 +62,7 @@ export function MonthEndSnapshotCard({
               <CalendarCheck className="h-5 w-5" />
             </div>
             <div>
-              <CardTitle className="text-base text-slate-900">
+              <CardTitle as="h2" className="text-base text-slate-900">
                 Month-End Snapshot · {monthName}
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">

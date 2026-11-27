@@ -276,7 +276,7 @@ export function DojoLevelNode({
           </div>
 
           {isLocked && level.id > 1 && (
-            <p className="mt-0.5 text-[10px] font-medium leading-tight text-slate-400">
+            <p className="mt-0.5 text-[10px] font-medium leading-tight text-slate-500">
               Finish Level {level.id - 1} to unlock
             </p>
           )}

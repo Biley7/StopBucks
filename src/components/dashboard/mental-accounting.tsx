@@ -56,7 +56,7 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
               <Scale className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-base text-slate-900">
+              <CardTitle as="h2" className="text-base text-slate-900">
                 True Disposable Runway Allocation
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -66,8 +66,8 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-            <div className="rounded-lg border border-slate-200/80 bg-white p-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+            <div className="rounded-xl border border-slate-200/80 bg-white p-3">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Monthly Budget
               </div>
@@ -78,38 +78,38 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
                   profile.hourlyRateMinor
                 )}
               </div>
-              <p className="mt-0.5 text-[10px] text-slate-400">Total nominal budget</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Total nominal budget</p>
             </div>
 
-            <div className="rounded-lg border border-rose-200/80 bg-rose-50/40 p-2.5">
+            <div className="rounded-xl border border-rose-200/80 bg-rose-50/50 p-3">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-rose-700">
                 − Fixed Bills Reserved
               </div>
-              <div className="mt-1 text-sm font-bold tabular-nums text-rose-600">
+              <div className="mt-1 text-sm font-bold tabular-nums text-rose-700">
                 {formatAmount(
                   runway.fixedCommitmentsMinor,
                   profile.currency,
                   profile.hourlyRateMinor
                 )}
               </div>
-              <p className="mt-0.5 text-[10px] text-rose-500/80">Unavoidable commitments</p>
+              <p className="mt-0.5 text-[11px] text-rose-700/80">Unavoidable commitments</p>
             </div>
 
-            <div className="rounded-lg border border-emerald-200/80 bg-emerald-50/40 p-2.5">
+            <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
                 − Invest-in-Self
               </div>
-              <div className="mt-1 text-sm font-bold tabular-nums text-emerald-600">
+              <div className="mt-1 text-sm font-bold tabular-nums text-emerald-700">
                 {formatAmount(
                   runway.selfInvestTargetMinor,
                   profile.currency,
                   profile.hourlyRateMinor
                 )}
               </div>
-              <p className="mt-0.5 text-[10px] text-emerald-500/80">Ring-fenced growth</p>
+              <p className="mt-0.5 text-[11px] text-emerald-700/80">Ring-fenced growth</p>
             </div>
 
-            <div className="rounded-lg border border-sky-300 bg-sky-50/80 p-2.5">
+            <div className="rounded-xl border border-sky-300 bg-sky-50/80 p-3">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-800">
                 = Disposable Pool
               </div>
@@ -120,7 +120,7 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
                   profile.hourlyRateMinor
                 )}
               </div>
-              <p className="mt-0.5 text-[10px] text-sky-700">Actual consumption pool</p>
+              <p className="mt-0.5 text-[11px] text-sky-800">Actual consumption pool</p>
             </div>
           </div>
 
@@ -132,16 +132,16 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Consumption burn */}
-        <Card className="border-slate-200">
+        <Card className="min-w-0 border-slate-200/80">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <Flame className="h-4 w-4" />
+              <Flame className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
-              <CardTitle className="text-base">Consumption Burn</CardTitle>
+              <CardTitle as="h2" className="text-base">Consumption Burn</CardTitle>
               <CardDescription className="text-xs">
                 Lifestyle spending that draws down your runway.
               </CardDescription>
@@ -205,7 +205,7 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
               <Sprout className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-base text-emerald-950">
+              <CardTitle as="h2" className="text-base text-emerald-950">
                 Invest-in-Self Capital
               </CardTitle>
               <CardDescription className="text-xs text-emerald-800">
@@ -248,7 +248,14 @@ export function MentalAccounting({ runway, profile, transactions }: MentalAccoun
               <span>Self-investment goal progress</span>
               <span className="tabular-nums">{investmentProgress}%</span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+            <div
+              role="progressbar"
+              aria-label="Self-investment goal progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={investmentProgress}
+              className="h-2 w-full overflow-hidden rounded-full bg-emerald-100"
+            >
               <div
                 className="h-full rounded-full bg-emerald-500 transition-all"
                 style={{ width: `${investmentProgress}%` }}

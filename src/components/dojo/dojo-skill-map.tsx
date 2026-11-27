@@ -37,11 +37,11 @@ function WorldBanner({
   return (
     <div
       className={cn(
-        "rounded-xl border px-4 py-3 shadow-xs",
+        "rounded-2xl border px-4 py-3 shadow-xs",
         worldStyle.bannerBorderClass,
         stat.isUnlocked
           ? worldStyle.bannerLeftAccentClass
-          : "border-l-4 border-l-slate-300 bg-slate-50"
+          : "border-slate-200 bg-slate-50"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -155,14 +155,14 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
     <section aria-label="StopBucks Dojo 3-World Skill Map" className="space-y-4">
       {/* Prominent Continue Next Drill CTA or All-Mastered State */}
       {activeLevel ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-sky-800">
                 Active Drill · Level {activeLevel.id}
               </span>
               {activeWorld && (
-                <span className="text-[11px] font-semibold text-slate-500">
+                <span className="text-[11px] font-semibold text-slate-600">
                   World {activeWorld.worldNumber} · {activeWorld.title}
                 </span>
               )}
@@ -177,7 +177,7 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
                 </span>
               )}
             </div>
-            <h2 className="truncate text-sm font-bold text-slate-900 sm:text-base">
+            <h2 className="text-sm font-bold leading-snug text-slate-900 sm:text-base">
               Level {activeLevel.id}: {activeLevel.title}
             </h2>
           </div>
@@ -185,7 +185,7 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
           <Button
             type="button"
             onClick={() => onSelectLevel(activeLevel.id)}
-            className="h-10 shrink-0 gap-2 border-b-[3px] border-b-sky-800 bg-sky-600 px-4 text-xs font-bold text-white hover:bg-sky-500 active:translate-y-px sm:text-sm"
+            className="h-10 shrink-0 gap-2 border-b-[3px] border-b-sky-950 bg-sky-700 px-4 text-xs font-bold text-white hover:bg-sky-800 active:translate-y-px sm:text-sm"
           >
             <Play className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
             <span>Continue Next Drill</span>

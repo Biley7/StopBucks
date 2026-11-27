@@ -279,11 +279,11 @@ export function ImpulseSimulatorDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-      <DialogContent className="max-h-[92vh] overflow-y-auto w-full max-w-lg p-5 sm:p-6">
-        <DialogHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-              <Sparkles className="h-4 w-4" />
+      <DialogContent className="max-h-[90dvh] overflow-y-auto p-5 sm:p-6">
+        <DialogHeader className="pb-2 text-left">
+          <div className="flex items-center gap-2.5 pr-6">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-slate-900 sm:text-lg">
@@ -298,7 +298,7 @@ export function ImpulseSimulatorDialog({
 
         <div className="space-y-4">
           {/* Inputs Section */}
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-3 sm:p-3.5">
+          <div className="space-y-3 rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5">
             <div className="space-y-1">
               <Label htmlFor="sim-item-name" className="text-xs font-semibold text-slate-700">
                 What are you considering buying?
@@ -310,7 +310,7 @@ export function ImpulseSimulatorDialog({
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 disabled={isMutating}
-                className="h-8 text-xs bg-white"
+                className="h-9 text-xs bg-white"
                 autoFocus
               />
             </div>
@@ -326,7 +326,7 @@ export function ImpulseSimulatorDialog({
                 value={priceText}
                 onChange={(e) => setPriceText(e.target.value)}
                 disabled={isMutating}
-                className="h-8 text-xs bg-white"
+                className="h-9 text-xs tabular-nums bg-white"
               />
               {priceText.trim().length > 0 && priceMinor === null && (
                 <p className="text-[11px] text-red-600">
@@ -353,10 +353,11 @@ export function ImpulseSimulatorDialog({
                     <button
                       key={tag}
                       type="button"
+                      aria-pressed={isSelected}
                       onClick={() => setTriggerTag(tag)}
                       disabled={isMutating}
                       className={cn(
-                        "rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-colors cursor-pointer",
+                        "min-h-[36px] rounded-lg border px-2.5 py-1.5 text-left text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                         isSelected
                           ? tag === "invest_self"
                             ? "border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold"
@@ -426,7 +427,7 @@ export function ImpulseSimulatorDialog({
                       <span className="text-rose-700 text-xs">Exceeds runway</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     {simulation.isProtectedSelfInvestment
                       ? "Protected from daily runway"
                       : "Daily allowances used"}
@@ -445,13 +446,13 @@ export function ImpulseSimulatorDialog({
                       profile.hourlyRateMinor
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-slate-500">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     {simulation.dailyDropMinor > 0 ? (
-                      <span className="text-rose-600 font-medium">
+                      <span className="font-medium tabular-nums text-rose-600">
                         −{formatAmount(simulation.dailyDropMinor, profile.currency, profile.hourlyRateMinor)}/day
                       </span>
                     ) : (
-                      <span className="text-emerald-600 font-medium">No daily reduction</span>
+                      <span className="font-medium text-emerald-600">No daily reduction</span>
                     )}
                   </p>
                 </div>
@@ -465,10 +466,10 @@ export function ImpulseSimulatorDialog({
                     {simulation.workHours !== null ? (
                       `${simulation.workHours.toFixed(1)} hrs`
                     ) : (
-                      <span className="text-slate-400 text-xs">Rate unset</span>
+                      <span className="text-xs text-slate-500">Rate unset</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
+                  <p className="mt-0.5 text-[11px] tabular-nums text-slate-500">
                     At {formatAmount(profile.hourlyRateMinor, profile.currency, profile.hourlyRateMinor)}/hr
                   </p>
                 </div>
@@ -476,7 +477,7 @@ export function ImpulseSimulatorDialog({
                 {/* 4. 4-Year Compounded Opportunity Cost */}
                 <div className="rounded-lg border border-slate-200/80 bg-white p-2.5">
                   <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                    <TrendingUp className="h-3 w-3 text-emerald-600" />
+                    <TrendingUp className="h-3 w-3 text-emerald-600" aria-hidden="true" />
                     <span>In 4 Years</span>
                   </div>
                   <div className="mt-1 text-sm font-bold tabular-nums text-emerald-700 sm:text-base">
@@ -486,18 +487,18 @@ export function ImpulseSimulatorDialog({
                       profile.hourlyRateMinor
                     )}
                   </div>
-                  <p className="mt-0.5 text-[10px] text-slate-400">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     If invested at 8% annual return
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-500">
-              <p className="font-medium text-slate-700">
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-xs text-slate-600">
+              <p className="font-medium text-slate-800">
                 Enter an item name and price above to simulate.
               </p>
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1 text-[11px] text-slate-500">
                 We will calculate the exact days of runway consumed, daily Safe-to-Spend impact, and 4-year opportunity cost.
               </p>
             </div>

@@ -157,7 +157,7 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
               <Receipt className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-base text-slate-900">
+              <CardTitle as="h2" className="text-base text-slate-900">
                 Fixed Bills Reserved
               </CardTitle>
               <CardDescription className="text-xs text-slate-500">
@@ -166,9 +166,9 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <div className="sm:text-right">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                 Total Reserved
               </div>
               <div className="text-sm font-bold tabular-nums text-slate-900 sm:text-base">
@@ -185,9 +185,9 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
                 size="sm"
                 variant="outline"
                 onClick={() => setIsAdding(true)}
-                className="h-8 gap-1 text-xs"
+                className="h-9 gap-1.5 text-xs sm:h-8"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Add Fixed Bill
               </Button>
             )}
@@ -235,7 +235,7 @@ export function FixedCommitmentsCard({ profile }: FixedCommitmentsCardProps) {
                   placeholder="e.g. 4500"
                   value={amountText}
                   onChange={(e) => setAmountText(e.target.value)}
-                  className="h-8 text-xs bg-white"
+                  className="h-9 text-xs tabular-nums bg-white"
                   disabled={addMutation.isPending}
                 />
               </div>
@@ -389,14 +389,14 @@ function FixedCommitmentRow({
           size="icon"
           onClick={onDelete}
           disabled={isDeleting}
-          className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50 focus:text-red-600"
+          className="h-9 w-9 text-slate-500 hover:bg-red-50 hover:text-red-700 focus-visible:text-red-700 sm:h-8 sm:w-8"
           title={`Delete ${commitment.title}`}
           aria-label={`Delete ${commitment.title}`}
         >
           {isDeleting ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" aria-hidden="true" />
           ) : (
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
           )}
         </Button>
       </div>

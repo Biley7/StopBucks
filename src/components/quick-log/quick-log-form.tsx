@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Loader2, PlusCircle, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRepository } from "@/repositories/repository-provider";
 import { useDisplayPreference } from "@/lib/display-preference-context";
@@ -227,7 +227,7 @@ export function QuickLogForm({
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-sky-600" />
-            <CardTitle className="text-base">Smart Quick Log</CardTitle>
+            <CardTitle as="h2" className="text-base">Smart Quick Log</CardTitle>
           </div>
           <CardDescription className="text-xs">
             Describe it naturally. Nothing is saved until you confirm.
@@ -274,7 +274,7 @@ export function QuickLogForm({
 
       <Card className="border-slate-200">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Expense Details</CardTitle>
+          <CardTitle as="h2" className="text-base">Expense Details</CardTitle>
           <CardDescription className="text-xs">
             Everything remains editable before it reaches your ledger.
           </CardDescription>
@@ -302,12 +302,12 @@ export function QuickLogForm({
                     setFormError(null);
                     setParseError(null);
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs transition hover:border-sky-300 hover:bg-sky-50/60 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20 active:scale-95"
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-2xs transition hover:border-sky-300 hover:bg-sky-50/70 hover:text-sky-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 active:scale-[0.98] cursor-pointer"
                   aria-label={`Preset: ${preset.label}, ${formatAmount(preset.amountMinor, profile.currency, profile.hourlyRateMinor)}`}
                 >
                   <span aria-hidden="true">{preset.emoji}</span>
                   <span>{preset.label}</span>
-                  <span className="font-semibold text-slate-900">
+                  <span className="font-semibold tabular-nums text-slate-900">
                     {formatAmount(preset.amountMinor, profile.currency, profile.hourlyRateMinor)}
                   </span>
                 </button>
@@ -318,11 +318,12 @@ export function QuickLogForm({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="expense-amount">Amount</Label>
+                <Label htmlFor="expense-amount">Amount ({profile.currency})</Label>
                 <Input
                   id="expense-amount"
                   inputMode="decimal"
                   placeholder="0.00"
+                  className="tabular-nums"
                   value={amountText}
                   onChange={(event) => setAmountText(event.target.value)}
                 />
@@ -342,9 +343,9 @@ export function QuickLogForm({
                       type="button"
                       onClick={() => setPaymentMode(mode.value)}
                       className={cn(
-                        "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        "flex-1 min-h-[40px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                         paymentMode === mode.value
-                          ? "border-sky-500 bg-sky-50 text-sky-800"
+                          ? "border-sky-500 bg-sky-50 font-semibold text-sky-900"
                           : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                       )}
                       aria-pressed={paymentMode === mode.value}
@@ -376,11 +377,11 @@ export function QuickLogForm({
                     type="button"
                     onClick={() => setTrigger(tag)}
                     className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                      "min-h-[36px] rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
                       trigger === tag
                         ? tag === "invest_self"
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                          : "border-sky-500 bg-sky-50 text-sky-800"
+                          ? "border-emerald-500 bg-emerald-50 font-semibold text-emerald-900"
+                          : "border-sky-500 bg-sky-50 font-semibold text-sky-900"
                         : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                     )}
                     aria-pressed={trigger === tag}
@@ -392,7 +393,7 @@ export function QuickLogForm({
             </div>
 
             {/* Runway impact preview */}
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 p-3.5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                 Runway impact preview
               </p>
@@ -448,7 +449,11 @@ export function QuickLogForm({
               disabled={addMutation.isPending}
               className="w-full sm:w-auto"
             >
-              {addMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              {addMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <PlusCircle className="h-4 w-4" aria-hidden="true" />
+              )}
               {addMutation.isPending ? "Saving..." : "Log expense"}
             </Button>
           </form>

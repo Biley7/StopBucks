@@ -26,7 +26,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <RepositoryProvider>
         <DisplayPreferenceProvider>
           {children}
-          <Toaster position="bottom-right" richColors />
+          <Toaster
+            position="bottom-right"
+            mobileOffset={{ bottom: 72, left: 16, right: 16 }}
+            richColors
+          />
         </DisplayPreferenceProvider>
       </RepositoryProvider>
     </QueryClientProvider>

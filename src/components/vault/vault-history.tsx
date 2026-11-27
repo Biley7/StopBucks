@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ShieldCheck, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useDisplayPreference } from "@/lib/display-preference-context";
@@ -19,9 +20,9 @@ export function VaultHistory({ items, profile }: VaultHistoryProps) {
   const purchased = items.filter((item) => item.status === "purchased");
 
   return (
-    <Card className="border-slate-200">
+    <Card className="min-w-0 border-slate-200/80">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Vault History</CardTitle>
+        <CardTitle as="h2" className="text-base">Vault History</CardTitle>
         <CardDescription className="text-xs">
           {rescued.length} rescued · {purchased.length} purchased after cooling
         </CardDescription>
@@ -42,18 +43,23 @@ export function VaultHistory({ items, profile }: VaultHistoryProps) {
                   <p className="truncate text-xs font-medium text-slate-800">
                     {item.itemName}
                   </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
                     <Badge
                       className={
                         item.status === "rescued"
-                          ? "border-transparent bg-emerald-100 text-[9px] text-emerald-800"
-                          : "border-transparent bg-slate-200 text-[9px] text-slate-700"
+                          ? "gap-1 border-transparent bg-emerald-100 text-[10px] text-emerald-900"
+                          : "gap-1 border-transparent bg-slate-200 text-[10px] text-slate-800"
                       }
                     >
-                      {item.status === "rescued" ? "Rescued" : "Purchased"}
+                      {item.status === "rescued" ? (
+                        <ShieldCheck className="h-2.5 w-2.5" aria-hidden="true" />
+                      ) : (
+                        <ShoppingBag className="h-2.5 w-2.5" aria-hidden="true" />
+                      )}
+                      <span>{item.status === "rescued" ? "Rescued" : "Purchased"}</span>
                     </Badge>
                     <span>{TRIGGER_LABELS[item.triggerTag]}</span>
-                    <span>
+                    <span className="tabular-nums text-slate-500">
                       {item.resolvedAt ? item.resolvedAt.slice(0, 10) : "—"}
                     </span>
                   </div>

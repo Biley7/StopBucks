@@ -95,12 +95,15 @@ export default function VaultPage() {
 
   if (profileQuery.isLoading || vaultQuery.isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="h-6 w-56 animate-pulse rounded bg-slate-200" />
-        <div className="h-28 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      <div className="space-y-5" aria-busy="true" aria-label="Loading cool-off vault">
+        <div className="space-y-1.5">
+          <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200" />
+          <div className="h-4 w-64 animate-pulse rounded bg-slate-100" />
+        </div>
+        <div className="h-28 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
-          <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
+          <div className="h-72 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="h-72 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
         </div>
       </div>
     );
@@ -148,15 +151,17 @@ export default function VaultPage() {
   const cooling = vaultItems.filter((item) => item.status === "cooling");
   const resolved = vaultItems.filter((item) => item.status !== "cooling");
   const moneyRescuedMinor = calculateMoneyRescuedMinor(vaultItems);
+  const coolingTotalMinor = cooling.reduce((sum, item) => sum + item.priceMinor, 0);
+  const rescuedCount = resolved.filter((item) => item.status === "rescued").length;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             48-Hour Cool-Off Vault
           </h1>
-          <p className="text-xs text-slate-500 sm:text-sm">
+          <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">
             Pause mindless impulse. Protect self-investment.
           </p>
         </div>
@@ -168,7 +173,7 @@ export default function VaultPage() {
               variant="outline"
               className="gap-1.5 border-sky-200 text-sky-800 hover:bg-sky-50 self-start sm:self-auto"
             >
-              <Sparkles className="h-4 w-4 text-sky-600" />
+              <Sparkles className="h-4 w-4 text-sky-600" aria-hidden="true" />
               Should I Buy This?
             </Button>
           }
@@ -177,36 +182,40 @@ export default function VaultPage() {
 
       {/* Money Rescued hero */}
       <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
-        <CardHeader className="pb-1">
+        <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+            <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
             <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
               Money Rescued
             </CardDescription>
           </div>
-          <CardTitle className="text-3xl font-extrabold text-emerald-950">
+          <CardTitle as="h2" className="text-3xl font-extrabold tracking-tight tabular-nums text-emerald-950 sm:text-4xl">
             {formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-800">
+        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs tabular-nums text-emerald-900">
           <span>
-            {resolved.filter((item) => item.status === "rescued").length} impulse
-            {resolved.filter((item) => item.status === "rescued").length === 1 ? "" : "s"}{" "}
-            released after cooling
+            {rescuedCount} impulse{rescuedCount === 1 ? "" : "s"} released after cooling
           </span>
+          {cooling.length > 0 && (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
+              {cooling.length} currently cooling (
+              {formatAmount(coolingTotalMinor, profile.currency, profile.hourlyRateMinor)})
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
-            <Sparkles className="h-3 w-3" />
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
             Still available for your runway or self-investment.
           </span>
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ParkImpulseForm />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ParkImpulseForm currency={profile.currency} />
 
-        <Card className="border-slate-200">
+        <Card className="min-w-0 border-slate-200/80">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Cooling Off</CardTitle>
+            <CardTitle as="h2" className="text-base">Cooling Off</CardTitle>
             <CardDescription className="text-xs">
               {cooling.length === 0
                 ? "Nothing is cooling right now."

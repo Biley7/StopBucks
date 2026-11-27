@@ -119,7 +119,7 @@ export function BucketSortWidget({
         >
           <Card className="border-2 border-slate-200 bg-white shadow-xs">
             <CardContent className="space-y-2 p-5">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Classify This Item
               </div>
               <h2 className="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">

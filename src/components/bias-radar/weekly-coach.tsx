@@ -118,7 +118,7 @@ export function WeeklyCoach({ bias, runway, profile }: WeeklyCoachProps) {
               <Brain className="h-4 w-4" />
             </div>
             <div>
-              <CardTitle className="text-base">Weekly Behavioral Coach</CardTitle>
+              <CardTitle as="h2" className="text-base">Weekly Behavioral Coach</CardTitle>
               <CardDescription className="text-xs">
                 One small experiment for ISO week {weekKey}
               </CardDescription>
@@ -190,7 +190,7 @@ export function WeeklyCoach({ bias, runway, profile }: WeeklyCoachProps) {
               <span className="rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-800">
                 Primary bias: {nudge.primary_bias}
               </span>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-800">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium tabular-nums text-emerald-800">
                 Projected savings:{" "}
                 {formatAmount(
                   nudge.projected_savings_minor,

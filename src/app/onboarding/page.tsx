@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, DollarSign, Sparkles, TrendingUp } from "lucide-react";
-import { onboardingSchema, type OnboardingFormValues } from "@/lib/schemas";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { onboardingSchema } from "@/lib/schemas";
 import { fromMinorUnits, CURRENCY_CONFIGS } from "@/domain/currency";
 import { parseAmountStringToMinor } from "@/domain/expense-parser";
 import { useQueryClient } from "@tanstack/react-query";
@@ -27,6 +28,7 @@ export default function OnboardingPage() {
   const { repository, isGuest, isLoading: isRepoLoading, cacheIdentity } = useRepository();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>("INR");
@@ -41,6 +43,7 @@ export default function OnboardingPage() {
       try {
         const profile = await repository.getProfile();
         if (profile) {
+          setHasExistingProfile(true);
           setSelectedCurrency(profile.currency);
           setMonthlyBudget(String(fromMinorUnits(profile.monthlyBudgetMinor)));
           setSelfInvestTarget(String(fromMinorUnits(profile.selfInvestTargetMinor)));
@@ -122,12 +125,24 @@ export default function OnboardingPage() {
   };
 
   const currConfig = CURRENCY_CONFIGS[selectedCurrency];
+  const symbolPadClass = currConfig.symbol.length > 1 ? "pl-12" : "pl-8";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 sm:p-6">
       <div className="w-full max-w-xl">
+        {hasExistingProfile && (
+          <div className="mb-4">
+            <Button asChild variant="ghost" size="sm" className="-ml-2 text-slate-600 hover:text-slate-900">
+              <Link href="/runway">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to Daily Runway
+              </Link>
+            </Button>
+          </div>
+        )}
+
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-600 font-bold text-white shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-700 font-bold text-white shadow-xs">
             SB
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -138,10 +153,10 @@ export default function OnboardingPage() {
           </p>
         </div>
 
-        <Card className="border-slate-200 bg-white shadow-sm">
+        <Card className="border-slate-200/80 bg-white shadow-xs">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Student Profile</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle as="h2" className="text-lg">Student Profile</CardTitle>
               {isGuest && (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
                   Guest Sandbox
@@ -155,7 +170,7 @@ export default function OnboardingPage() {
 
           <CardContent>
             {formError && (
-              <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {formError}
               </div>
             )}
@@ -184,12 +199,12 @@ export default function OnboardingPage() {
 
               {/* 2. Monthly Budget */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                   <Label htmlFor="monthlyBudget">2. Total Monthly Budget</Label>
-                  <span className="text-xs text-slate-400">Total allowance / income</span>
+                  <span className="text-xs text-slate-500">Total allowance / income</span>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-sm text-slate-400">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">
                     {currConfig.symbol}
                   </span>
                   <Input
@@ -198,7 +213,7 @@ export default function OnboardingPage() {
                     step="any"
                     min="1"
                     required
-                    className="pl-8"
+                    className={`${symbolPadClass} tabular-nums`}
                     placeholder="20000"
                     value={monthlyBudget}
                     onChange={(e) => setMonthlyBudget(e.target.value)}
@@ -211,12 +226,12 @@ export default function OnboardingPage() {
 
               {/* 3. Monthly Self-Investment Target */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                   <Label htmlFor="selfInvestTarget">3. Self-Investment Target</Label>
-                  <span className="text-xs text-slate-400">Books, courses, fitness</span>
+                  <span className="text-xs text-slate-500">Books, courses, fitness</span>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-sm text-slate-400">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">
                     {currConfig.symbol}
                   </span>
                   <Input
@@ -225,7 +240,7 @@ export default function OnboardingPage() {
                     step="any"
                     min="0"
                     required
-                    className="pl-8"
+                    className={`${symbolPadClass} tabular-nums`}
                     placeholder="3500"
                     value={selfInvestTarget}
                     onChange={(e) => setSelfInvestTarget(e.target.value)}
@@ -241,12 +256,12 @@ export default function OnboardingPage() {
 
               {/* 4. Hourly Rate */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                   <Label htmlFor="hourlyRate">4. Hourly Time Value / Wage</Label>
-                  <span className="text-xs text-slate-400">Powers Pain-of-Paying hours</span>
+                  <span className="text-xs text-slate-500">Powers Pain-of-Paying hours</span>
                 </div>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-sm text-slate-400">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-slate-500">
                     {currConfig.symbol}
                   </span>
                   <Input
@@ -255,7 +270,7 @@ export default function OnboardingPage() {
                     step="any"
                     min="1"
                     required
-                    className="pl-8"
+                    className={`${symbolPadClass} tabular-nums`}
                     placeholder="200"
                     value={hourlyRate}
                     onChange={(e) => setHourlyRate(e.target.value)}
@@ -269,14 +284,14 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              <div className="pt-4">
+              <div className="pt-2">
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-sky-600 text-white hover:bg-sky-700 h-11 text-base font-medium"
+                  className="h-11 w-full bg-sky-700 text-base font-semibold text-white hover:bg-sky-800"
                 >
                   {isSubmitting ? "Saving Baseline..." : "Proceed to Daily Runway"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             </form>

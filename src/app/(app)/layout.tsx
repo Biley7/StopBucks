@@ -10,29 +10,31 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AccessGate><div className="flex min-h-screen flex-col bg-slate-50">
-      {/* Subtle Guest Sandbox Banner with working Reset Demo */}
-      <GuestBanner />
+    <AccessGate>
+      <div className="flex min-h-dvh flex-col bg-slate-50 md:h-dvh md:overflow-hidden">
+        {/* Compact Guest Sandbox Banner with working Reset Demo */}
+        <GuestBanner />
 
-      <div className="flex flex-1">
-        {/* Desktop Sidebar Navigation */}
-        <AppSidebar />
+        <div className="flex min-h-0 flex-1">
+          {/* Desktop Sidebar Navigation */}
+          <AppSidebar />
 
-        {/* Main Content Area */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {/* Top Bar with Pain-of-Paying Switcher */}
-          <AppTopbar />
+          {/* Main Content Area */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-x-clip md:overflow-hidden">
+            {/* Top Bar with Pain-of-Paying Switcher */}
+            <AppTopbar />
 
-          {/* Page Content Viewport */}
-          <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 md:pb-8">
-            <div className="mx-auto max-w-6xl">{children}</div>
-          </main>
+            {/* Page Content Viewport */}
+            <main className="min-w-0 flex-1 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:p-6 md:min-h-0 md:overflow-y-auto md:pb-10">
+              <div className="mx-auto max-w-6xl min-w-0">{children}</div>
+            </main>
+          </div>
         </div>
-      </div>
 
-      {/* Mobile Fixed Bottom Navigation */}
-      <MobileBottomNav />
-    </div></AccessGate>
+        {/* Mobile Fixed Bottom Navigation */}
+        <MobileBottomNav />
+      </div>
+    </AccessGate>
   );
 }
 

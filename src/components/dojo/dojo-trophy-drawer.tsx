@@ -46,7 +46,7 @@ export function DojoTrophyDrawer({
               Trophy Case &amp; Belt Ladder
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-600 sm:text-sm">
+          <DialogDescription className="text-xs tabular-nums text-slate-600 sm:text-sm">
             {currentRank.belt} ({currentRank.title}) · {progress.totalXp} XP ·{" "}
             {unlockedCount}/{DOJO_LEVELS.length} mastery badges unlocked
           </DialogDescription>
@@ -231,7 +231,7 @@ export function DojoTrophyDrawer({
                       )}
                     </div>
 
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 text-[10px] font-semibold text-slate-400">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 text-[10px] font-semibold tabular-nums text-slate-500">
                       Level {level.id}
                       {level.isBoss ? " · Boss" : ""}
                     </div>

@@ -9,14 +9,14 @@ import { queryKeys } from "@/lib/query-keys";
 import { createVaultItemSchema } from "@/lib/schemas";
 import { parseAmountStringToMinor } from "@/domain/expense-parser";
 import { TRIGGER_LABELS, TRIGGER_ORDER } from "@/domain/runway-insights";
-import type { TriggerTag } from "@/domain/types";
+import type { CurrencyCode, TriggerTag } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-export function ParkImpulseForm() {
+export function ParkImpulseForm({ currency }: { currency?: CurrencyCode }) {
   const { repository, cacheIdentity } = useRepository();
   const queryClient = useQueryClient();
 
@@ -78,11 +78,11 @@ export function ParkImpulseForm() {
   };
 
   return (
-    <Card className="border-slate-200">
+    <Card className="min-w-0 border-slate-200/80">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <Lock className="h-4 w-4 text-amber-600" />
-          <CardTitle className="text-base">Park an Impulse</CardTitle>
+          <Lock className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          <CardTitle as="h2" className="text-base">Park an Impulse</CardTitle>
         </div>
         <CardDescription className="text-xs">
           No purchase, no transaction — just 48 hours of perspective.
@@ -105,11 +105,14 @@ export function ParkImpulseForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="vault-price">Expected price</Label>
+            <Label htmlFor="vault-price">
+              Expected price{currency ? ` (${currency})` : ""}
+            </Label>
             <Input
               id="vault-price"
               inputMode="decimal"
               placeholder="0.00"
+              className="tabular-nums"
               value={priceText}
               onChange={(event) => setPriceText(event.target.value)}
             />
@@ -127,9 +130,9 @@ export function ParkImpulseForm() {
                   type="button"
                   onClick={() => setTrigger(tag)}
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    "min-h-[34px] rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500",
                     trigger === tag
-                      ? "border-amber-500 bg-amber-50 text-amber-800"
+                      ? "border-amber-500 bg-amber-50 font-semibold text-amber-900"
                       : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                   )}
                   aria-pressed={trigger === tag}

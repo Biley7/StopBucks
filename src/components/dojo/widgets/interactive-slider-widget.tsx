@@ -185,7 +185,7 @@ export function InteractiveSliderWidget({
             Beat 2 · Interactive Model Lab
           </Badge>
 
-          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
+          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-bold tabular-nums text-slate-600">
             Target: {formatRangeText(mechanic)}
           </span>
         </div>
@@ -499,7 +499,7 @@ export function InteractiveSliderWidget({
               disabled={lockedIn}
               aria-label={mechanic.sliderLabel}
               onChange={(event) => handleSliderChange(Number(event.target.value))}
-              className="h-2.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-2.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             />
 
             <div className="flex justify-between text-[11px] font-medium tabular-nums text-slate-500">

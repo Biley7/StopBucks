@@ -29,7 +29,7 @@ export function DailyBurnChart({ series, profile }: DailyBurnChartProps) {
   return (
     <Card className="border-slate-200">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Daily Burn vs Linear Pace</CardTitle>
+        <CardTitle as="h2" className="text-base">Daily Burn vs Linear Pace</CardTitle>
         <CardDescription className="text-xs">
           Cumulative consumption this month against a healthy straight-line budget.
         </CardDescription>
@@ -49,7 +49,7 @@ export function DailyBurnChart({ series, profile }: DailyBurnChartProps) {
             aria-label="Line chart comparing cumulative actual consumption against healthy linear budget pacing across the calendar month."
           >
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+              <ComposedChart data={series} margin={{ top: 8, right: 12, bottom: 0, left: -4 }}>
                 <defs>
                   <linearGradient id="burnFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#0284c7" stopOpacity={0.25} />
@@ -63,13 +63,13 @@ export function DailyBurnChart({ series, profile }: DailyBurnChartProps) {
                   tickLine={false}
                   axisLine={{ stroke: "#e2e8f0" }}
                   interval="preserveStartEnd"
-                  minTickGap={12}
+                  minTickGap={16}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: "#64748b" }}
                   tickLine={false}
                   axisLine={false}
-                  width={64}
+                  width={60}
                   tickFormatter={(value: number) =>
                     formatAxisValue(
                       value,

@@ -38,10 +38,13 @@ export default function QuickLogPage() {
     fixedCommitmentsQuery.isLoading
   ) {
     return (
-      <div className="space-y-4">
-        <div className="h-6 w-48 animate-pulse rounded bg-slate-200" />
-        <div className="h-40 animate-pulse rounded-xl border border-slate-200 bg-white" />
-        <div className="h-72 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      <div className="space-y-5" aria-busy="true" aria-label="Loading transaction log">
+        <div className="space-y-1.5">
+          <div className="h-7 w-48 animate-pulse rounded-lg bg-slate-200" />
+          <div className="h-4 w-72 animate-pulse rounded bg-slate-100" />
+        </div>
+        <div className="h-36 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+        <div className="h-80 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
       </div>
     );
   }
@@ -101,7 +104,7 @@ export default function QuickLogPage() {
         <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           Log an expense
         </h1>
-        <p className="text-xs text-slate-500 sm:text-sm">
+        <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">
           Capture the trigger behind the spend, not just the amount.
         </p>
       </div>

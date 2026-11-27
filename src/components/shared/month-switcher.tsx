@@ -56,7 +56,7 @@ export function MonthSwitcher({
     <nav
       aria-label="Month navigation"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-xs",
+        "inline-flex items-center gap-1 rounded-xl border border-slate-200/90 bg-white p-1 shadow-2xs",
         className
       )}
     >
@@ -64,30 +64,30 @@ export function MonthSwitcher({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+        className="h-9 w-9 p-0 text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:h-8 sm:w-8"
         onClick={handlePrev}
         aria-label="Previous month"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
       </Button>
 
       <div
-        className="flex items-center gap-2 px-2.5 py-1 text-xs font-semibold text-slate-800"
+        className="flex items-center gap-2 px-2 py-1 text-xs font-semibold tabular-nums text-slate-800 sm:px-2.5"
         aria-live="polite"
       >
-        <Calendar className="h-3.5 w-3.5 text-slate-400" />
-        <span>{monthName}</span>
+        <Calendar className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+        <span className="whitespace-nowrap">{monthName}</span>
         {isCurrentMonth ? (
           <Badge
             variant="secondary"
-            className="border-transparent bg-sky-100 text-[10px] font-medium text-sky-800 px-1.5 py-0"
+            className="border-transparent bg-sky-100 text-[10px] font-semibold text-sky-800 px-1.5 py-0"
           >
             Active
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="border-slate-200 text-[10px] font-normal text-slate-500 px-1.5 py-0"
+            className="border-slate-200 text-[10px] font-medium text-slate-600 px-1.5 py-0"
           >
             Historical
           </Badge>
@@ -98,12 +98,12 @@ export function MonthSwitcher({
         type="button"
         variant="ghost"
         size="sm"
-        className="h-8 w-8 p-0 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent"
+        className="h-9 w-9 p-0 text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent sm:h-8 sm:w-8"
         onClick={handleNext}
         disabled={!canGoNext}
         aria-label="Next month"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </Button>
     </nav>
   );

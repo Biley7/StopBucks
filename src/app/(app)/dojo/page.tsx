@@ -267,16 +267,16 @@ export default function DojoPage() {
 function DojoSkeleton() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Loading StopBucks Dojo">
-      <div className="h-24 animate-pulse rounded-xl border border-slate-200 bg-white" />
+      <div className="h-24 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
-          <div className="h-20 animate-pulse rounded-2xl border border-slate-200 bg-white" />
-          <div className="h-[520px] animate-pulse rounded-2xl border border-slate-200 bg-white" />
+          <div className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="h-[520px] animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
         </div>
         <div className="space-y-4">
-          <div className="h-44 animate-pulse rounded-xl border border-slate-200 bg-white" />
-          <div className="h-48 animate-pulse rounded-xl border border-slate-200 bg-white" />
-          <div className="h-64 animate-pulse rounded-xl border border-slate-200 bg-white" />
+          <div className="h-44 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="h-48 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
+          <div className="h-64 animate-pulse rounded-2xl border border-slate-200/80 bg-white" />
         </div>
       </div>
     </div>
