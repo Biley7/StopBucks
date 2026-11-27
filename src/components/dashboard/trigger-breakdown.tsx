@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import type { TriggerBreakdownEntry } from "@/domain/runway-insights";
 import type { UserProfile } from "@/domain/types";
@@ -55,12 +56,12 @@ export function TriggerBreakdown({ entries, profile }: TriggerBreakdownProps) {
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-center gap-2.5">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full ${BAR_COLORS[entry.trigger] ?? "bg-sky-500"}`}
-                      style={{ width: `${Math.min(100, Math.max(0, entry.percentage))}%` }}
-                    />
-                  </div>
+                  <AnimatedProgressBar
+                    value={entry.percentage}
+                    ariaLabel={`${entry.label} percentage`}
+                    trackClassName="flex-1 bg-slate-100"
+                    barClassName={BAR_COLORS[entry.trigger] ?? "bg-sky-500"}
+                  />
                   <span className="w-28 shrink-0 text-right text-[11px] tabular-nums text-slate-500 sm:w-32">
                     {entry.percentage}% of{" "}
                     {entry.denominator === "consumption" ? "consumption" : "total"}

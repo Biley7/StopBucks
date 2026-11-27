@@ -16,6 +16,11 @@ import { BiasRadarChart } from "@/components/bias-radar/bias-radar-chart";
 import { BiasCards } from "@/components/bias-radar/bias-cards";
 import { WeeklyCoach } from "@/components/bias-radar/weekly-coach";
 import { MonthSwitcher } from "@/components/shared/month-switcher";
+import {
+  FadeInSection,
+  StaggerGrid,
+  StaggerItem,
+} from "@/components/shared/motion-primitives";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getClientTimeZone } from "@/lib/timezone";
@@ -79,11 +84,11 @@ export default function RadarPage() {
     () =>
       profile
         ? calculateDailyRunway(
-            profile,
-            isCurrentMonth ? transactions : analysisTransactions,
-            isCurrentMonth ? referenceDate : endOfMonthDate,
-            timeZone
-          )
+          profile,
+          isCurrentMonth ? transactions : analysisTransactions,
+          isCurrentMonth ? referenceDate : endOfMonthDate,
+          timeZone
+        )
         : null,
     [profile, isCurrentMonth, transactions, analysisTransactions, referenceDate, endOfMonthDate, timeZone]
   );
@@ -155,21 +160,21 @@ export default function RadarPage() {
   const riskBadge =
     bias.overallRiskScore >= 60
       ? {
-          label: "Elevated",
-          tone: "bg-rose-100 text-rose-800 border-rose-200",
-          Icon: AlertOctagon,
-        }
+        label: "Elevated",
+        tone: "bg-rose-100 text-rose-800 border-rose-200",
+        Icon: AlertOctagon,
+      }
       : bias.overallRiskScore >= 30
         ? {
-            label: "Moderate",
-            tone: "bg-amber-100 text-amber-800 border-amber-200",
-            Icon: AlertTriangle,
-          }
+          label: "Moderate",
+          tone: "bg-amber-100 text-amber-800 border-amber-200",
+          Icon: AlertTriangle,
+        }
         : {
-            label: "Low Risk",
-            tone: "bg-emerald-100 text-emerald-800 border-emerald-200",
-            Icon: CheckCircle2,
-          };
+          label: "Low Risk",
+          tone: "bg-emerald-100 text-emerald-800 border-emerald-200",
+          Icon: CheckCircle2,
+        };
   const RiskIcon = riskBadge.Icon;
 
   return (
@@ -192,60 +197,66 @@ export default function RadarPage() {
       </div>
 
       {/* KPI Summary Strip */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <div className="flex items-center justify-between gap-2">
+      <StaggerGrid className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StaggerItem>
+          <Card className="h-full p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Overall Bias Score
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadge.tone}`}
+              >
+                <RiskIcon className="h-3 w-3" aria-hidden="true" />
+                {riskBadge.label}
+              </span>
+            </div>
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
+              {bias.overallRiskScore}
+              <span className="text-sm font-semibold text-slate-500"> / 100</span>
+            </p>
+          </Card>
+        </StaggerItem>
+
+        <StaggerItem>
+          <Card className="h-full p-4">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-              Overall Bias Score
+              Strongest Signal
             </span>
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${riskBadge.tone}`}
-            >
-              <RiskIcon className="h-3 w-3" aria-hidden="true" />
-              {riskBadge.label}
+            <p className="mt-1.5 truncate text-base font-bold text-slate-900">
+              {primaryDetector.metric.score > 0 ? primaryDetector.name : "No strong bias yet"}
+            </p>
+            <p className="mt-0.5 text-xs tabular-nums text-slate-500">
+              {primaryDetector.metric.score > 0
+                ? `Detector score ${primaryDetector.metric.score}/100 · ${primaryDetector.metric.count} txn${primaryDetector.metric.count === 1 ? "" : "s"}`
+                : "Scores emerge as you log transactions"}
+            </p>
+          </Card>
+        </StaggerItem>
+
+        <StaggerItem>
+          <Card className="h-full p-4">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Analysed Activity
             </span>
-          </div>
-          <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
-            {bias.overallRiskScore}
-            <span className="text-sm font-semibold text-slate-500"> / 100</span>
-          </p>
-        </Card>
+            <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
+              {analysisTransactions.length}
+              <span className="ml-1.5 text-sm font-medium text-slate-500">
+                transaction{analysisTransactions.length === 1 ? "" : "s"}
+              </span>
+            </p>
+          </Card>
+        </StaggerItem>
+      </StaggerGrid>
 
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            Strongest Signal
-          </span>
-          <p className="mt-1.5 truncate text-base font-bold text-slate-900">
-            {primaryDetector.metric.score > 0 ? primaryDetector.name : "No strong bias yet"}
-          </p>
-          <p className="mt-0.5 text-xs tabular-nums text-slate-500">
-            {primaryDetector.metric.score > 0
-              ? `Detector score ${primaryDetector.metric.score}/100 · ${primaryDetector.metric.count} txn${primaryDetector.metric.count === 1 ? "" : "s"}`
-              : "Scores emerge as you log transactions"}
-          </p>
-        </Card>
-
-        <Card className="p-4">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            Analysed Activity
-          </span>
-          <p className="mt-1.5 text-2xl font-extrabold tabular-nums text-slate-900">
-            {analysisTransactions.length}
-            <span className="ml-1.5 text-sm font-medium text-slate-500">
-              transaction{analysisTransactions.length === 1 ? "" : "s"}
-            </span>
-          </p>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <FadeInSection delay={0.05} className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-2">
           <BiasRadarChart bias={bias} />
         </div>
         <div className="min-w-0 lg:col-span-3">
           <BiasCards bias={bias} profile={profile} />
         </div>
-      </div>
+      </FadeInSection>
 
       {isCurrentMonth ? (
         <WeeklyCoach bias={bias} runway={runway} profile={profile} />

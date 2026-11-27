@@ -13,6 +13,7 @@ import { ParkImpulseForm } from "@/components/vault/park-impulse-form";
 import { CoolingItemCard } from "@/components/vault/cooling-item-card";
 import { VaultHistory } from "@/components/vault/vault-history";
 import { ImpulseSimulatorDialog } from "@/components/shared/impulse-simulator-dialog";
+import { FadeInSection } from "@/components/shared/motion-primitives";
 import type { VaultItem } from "@/domain/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -181,36 +182,38 @@ export default function VaultPage() {
       </div>
 
       {/* Money Rescued hero */}
-      <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-            <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
-              Money Rescued
-            </CardDescription>
-          </div>
-          <CardTitle as="h2" className="text-3xl font-extrabold tracking-tight tabular-nums text-emerald-950 sm:text-4xl">
-            {formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs tabular-nums text-emerald-900">
-          <span>
-            {rescuedCount} impulse{rescuedCount === 1 ? "" : "s"} released after cooling
-          </span>
-          {cooling.length > 0 && (
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
-              {cooling.length} currently cooling (
-              {formatAmount(coolingTotalMinor, profile.currency, profile.hourlyRateMinor)})
+      <FadeInSection>
+        <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <CardDescription className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">
+                Money Rescued
+              </CardDescription>
+            </div>
+            <CardTitle as="h2" className="text-3xl font-extrabold tracking-tight tabular-nums text-emerald-950 sm:text-4xl">
+              {formatAmount(moneyRescuedMinor, profile.currency, profile.hourlyRateMinor)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs tabular-nums text-emerald-900">
+            <span>
+              {rescuedCount} impulse{rescuedCount === 1 ? "" : "s"} released after cooling
             </span>
-          )}
-          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
-            <Sparkles className="h-3 w-3" aria-hidden="true" />
-            Still available for your runway or self-investment.
-          </span>
-        </CardContent>
-      </Card>
+            {cooling.length > 0 && (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-900">
+                {cooling.length} currently cooling (
+                {formatAmount(coolingTotalMinor, profile.currency, profile.hourlyRateMinor)})
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700">
+              <Sparkles className="h-3 w-3" aria-hidden="true" />
+              Still available for your runway or self-investment.
+            </span>
+          </CardContent>
+        </Card>
+      </FadeInSection>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <FadeInSection delay={0.05} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ParkImpulseForm currency={profile.currency} />
 
         <Card className="min-w-0 border-slate-200/80">
@@ -251,7 +254,7 @@ export default function VaultPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </FadeInSection>
 
       <VaultHistory items={resolved} profile={profile} />
     </div>

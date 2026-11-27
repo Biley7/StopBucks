@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useRepository } from "@/repositories/repository-provider";
 import { createClient } from "@/lib/supabase/client";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 
 export const NAV_ITEMS = [
@@ -79,17 +80,9 @@ export function AppSidebar() {
       <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200/80 px-5">
         <Link
           href="/runway"
-          className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+          className="flex items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
         >
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-700 font-bold text-white shadow-xs">
-            SB
-          </div>
-          <div>
-            <span className="font-bold text-slate-900 tracking-tight">StopBucks</span>
-            <span className="block text-[10px] uppercase font-semibold text-sky-700 tracking-wider">
-              Behavioral Finance
-            </span>
-          </div>
+          <BrandMark size="md" showWordmark subtitle="Behavioral Finance" />
         </Link>
       </div>
 

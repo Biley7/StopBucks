@@ -24,6 +24,11 @@ import { DailyBurnChart } from "@/components/dashboard/daily-burn-chart";
 import { TriggerBreakdown } from "@/components/dashboard/trigger-breakdown";
 import { FixedCommitmentsCard } from "@/components/dashboard/fixed-commitments-card";
 import { ImpulseSimulatorDialog } from "@/components/shared/impulse-simulator-dialog";
+import {
+  FadeInSection,
+  StaggerGrid,
+  StaggerItem,
+} from "@/components/shared/motion-primitives";
 import type { FixedCommitment, Transaction, UserProfile } from "@/domain/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -265,63 +270,75 @@ function RunwayDashboard({
         </div>
       </div>
 
-      {isCurrentMonth ? (
-        <SafeToSpendHero runway={liveRunway} profile={profile} />
-      ) : (
-        <MonthEndSnapshotCard snapshot={snapshot} profile={profile} />
-      )}
-      <MentalAccounting
-        runway={effectiveRunway}
-        profile={profile}
-        transactions={isCurrentMonth ? transactions : monthTransactions}
-      />
+      <FadeInSection>
+        {isCurrentMonth ? (
+          <SafeToSpendHero runway={liveRunway} profile={profile} />
+        ) : (
+          <MonthEndSnapshotCard snapshot={snapshot} profile={profile} />
+        )}
+      </FadeInSection>
+      <FadeInSection delay={0.05}>
+        <MentalAccounting
+          runway={effectiveRunway}
+          profile={profile}
+          transactions={isCurrentMonth ? transactions : monthTransactions}
+        />
+      </FadeInSection>
       <FixedCommitmentsCard profile={profile} />
       <DailyBurnChart series={series} profile={profile} />
       <TriggerBreakdown entries={triggerEntries} profile={profile} />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <ImpulseSimulatorDialog
-          profile={profile}
-          runwayMetrics={effectiveRunway}
-          trigger={
-            <button
-              type="button"
-              className="group flex w-full items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/70 p-4 text-left shadow-2xs transition-colors hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
-            >
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-1">
-                  <h3 className="text-sm font-semibold text-slate-900">Should I Buy This?</h3>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-sky-500 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+      <StaggerGrid className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerItem>
+          <ImpulseSimulatorDialog
+            profile={profile}
+            runwayMetrics={effectiveRunway}
+            trigger={
+              <button
+                type="button"
+                className="group flex h-full w-full items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50/80 p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_16px_-6px_rgba(2,132,199,0.14)] transition-all duration-150 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
+              >
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 transition-transform duration-150 group-hover:scale-105">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
                 </div>
-                <p className="mt-0.5 text-xs leading-snug text-slate-600">
-                  Simulate days of runway consumed before you spend.
-                </p>
-              </div>
-            </button>
-          }
-        />
-        <QuickAction
-          href="/log"
-          icon={<PlusCircle className="h-4 w-4" aria-hidden="true" />}
-          title="Log an expense"
-          description="Capture the amount and the trigger behind it."
-        />
-        <QuickAction
-          href="/vault"
-          icon={<Hourglass className="h-4 w-4" aria-hidden="true" />}
-          title="Pause an impulse"
-          description="Park it for 48 hours before deciding."
-        />
-        <QuickAction
-          href="/radar"
-          icon={<Compass className="h-4 w-4" aria-hidden="true" />}
-          title="View behavioral insights"
-          description="See which patterns shape your spending."
-        />
-      </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="text-sm font-semibold text-slate-900">Should I Buy This?</h3>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-sky-500 transition-transform duration-150 group-hover:translate-x-0.5" aria-hidden="true" />
+                  </div>
+                  <p className="mt-0.5 text-xs leading-snug text-slate-600">
+                    Simulate days of runway consumed before you spend.
+                  </p>
+                </div>
+              </button>
+            }
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <QuickAction
+            href="/log"
+            icon={<PlusCircle className="h-4 w-4" aria-hidden="true" />}
+            title="Log an expense"
+            description="Capture the amount and the trigger behind it."
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <QuickAction
+            href="/vault"
+            icon={<Hourglass className="h-4 w-4" aria-hidden="true" />}
+            title="Pause an impulse"
+            description="Park it for 48 hours before deciding."
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <QuickAction
+            href="/radar"
+            icon={<Compass className="h-4 w-4" aria-hidden="true" />}
+            title="View behavioral insights"
+            description="See which patterns shape your spending."
+          />
+        </StaggerItem>
+      </StaggerGrid>
     </div>
   );
 }
@@ -340,15 +357,15 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs transition-colors hover:border-sky-300 hover:bg-sky-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+      className="group flex h-full items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_16px_-6px_rgba(15,23,42,0.06)] transition-all duration-150 hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-md active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
     >
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition-transform duration-150 group-hover:scale-105">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center justify-between gap-1 text-sm font-semibold text-slate-900">
           <span className="truncate">{title}</span>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-sky-600" aria-hidden="true" />
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-sky-600" aria-hidden="true" />
         </span>
         <span className="mt-0.5 block text-xs leading-snug text-slate-500">{description}</span>
       </span>

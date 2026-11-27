@@ -8,6 +8,7 @@ import { useRepository } from "@/repositories/repository-provider";
 import { queryKeys } from "@/lib/query-keys";
 import { QuickLogForm } from "@/components/quick-log/quick-log-form";
 import { TransactionLedger } from "@/components/quick-log/transaction-ledger";
+import { FadeInSection } from "@/components/shared/motion-primitives";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -109,17 +110,21 @@ export default function QuickLogPage() {
         </p>
       </div>
 
-      <QuickLogForm
-        profile={profile}
-        transactions={transactionsQuery.data ?? []}
-        fixedCommitmentsMinor={totalFixedMinor}
-      />
+      <FadeInSection>
+        <QuickLogForm
+          profile={profile}
+          transactions={transactionsQuery.data ?? []}
+          fixedCommitmentsMinor={totalFixedMinor}
+        />
+      </FadeInSection>
 
-      <TransactionLedger
-        profile={profile}
-        transactions={transactionsQuery.data ?? []}
-        isLoading={transactionsQuery.isFetching}
-      />
+      <FadeInSection delay={0.06}>
+        <TransactionLedger
+          profile={profile}
+          transactions={transactionsQuery.data ?? []}
+          isLoading={transactionsQuery.isFetching}
+        />
+      </FadeInSection>
     </div>
   );
 }

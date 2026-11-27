@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { useRepository } from "@/repositories/repository-provider";
 import { createClient } from "@/lib/supabase/client";
+import { BrandMark } from "@/components/shared/brand-mark";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -79,22 +80,15 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-[#F4F6F8]">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-700 text-sm font-bold text-white shadow-xs sm:h-10 sm:w-10">
-              SB
-            </div>
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-                StopBucks
-              </span>
-              <span className="hidden rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-900 sm:inline-block">
-                Behavioral Finance
-              </span>
-            </div>
+            <BrandMark size="md" showWordmark />
+            <span className="hidden rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 sm:inline-block">
+              Behavioral Finance
+            </span>
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
@@ -123,6 +117,9 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="px-4 pt-8 pb-14 sm:px-6 sm:pt-12 sm:pb-20 lg:pt-14 lg:pb-24">
           <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-4 flex justify-center">
+              <BrandMark size="lg" showWordmark={false} />
+            </div>
             <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1 text-xs font-semibold text-sky-900 sm:mb-5">
               <Sparkles className="h-3.5 w-3.5 text-sky-700" aria-hidden="true" />
               <span>For College &amp; University Students</span>

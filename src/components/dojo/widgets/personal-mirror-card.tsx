@@ -46,22 +46,22 @@ interface PersonalMirrorCardProps {
 
 const TONE_STYLES: Record<
   DojoPersonalMirrorMetric["tone"],
-  { card: string; value: string; badge: string }
+  { card: string; value: string; dot: string }
 > = {
   positive: {
-    card: "border-emerald-200 bg-emerald-50/70",
-    value: "text-emerald-900",
-    badge: "bg-emerald-100 text-emerald-800",
+    card: "border-emerald-200 bg-emerald-50/70 shadow-[0_1px_2px_rgba(5,150,105,0.06)]",
+    value: "text-emerald-950",
+    dot: "bg-emerald-500",
   },
   caution: {
-    card: "border-amber-200 bg-amber-50/70",
-    value: "text-amber-900",
-    badge: "bg-amber-100 text-amber-800",
+    card: "border-amber-200 bg-amber-50/70 shadow-[0_1px_2px_rgba(217,119,6,0.06)]",
+    value: "text-amber-950",
+    dot: "bg-amber-500",
   },
   neutral: {
-    card: "border-slate-200 bg-white",
+    card: "border-slate-200 bg-slate-50/60 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
     value: "text-slate-900",
-    badge: "bg-slate-100 text-slate-700",
+    dot: "bg-slate-400",
   },
 };
 
@@ -295,26 +295,34 @@ export function PersonalMirrorCard({
                     <div
                       key={metric.label}
                       className={cn(
-                        "rounded-xl border p-3.5 transition-colors",
+                        "flex h-full flex-col justify-between rounded-xl border p-3.5 transition-colors",
                         tone.card
                       )}
                     >
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        {metric.label}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                          {metric.label}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className={cn("h-2 w-2 shrink-0 rounded-full", tone.dot)}
+                        />
                       </div>
-                      <div
-                        className={cn(
-                          "mt-1.5 text-lg font-extrabold tabular-nums tracking-tight",
-                          tone.value
-                        )}
-                      >
-                        {formatted.primary}
-                      </div>
-                      {formatted.secondary && (
-                        <div className="mt-1 text-xs font-medium text-slate-600">
-                          {formatted.secondary}
+                      <div className="mt-2">
+                        <div
+                          className={cn(
+                            "text-xl font-extrabold tabular-nums tracking-tight",
+                            tone.value
+                          )}
+                        >
+                          {formatted.primary}
                         </div>
-                      )}
+                        {formatted.secondary && (
+                          <div className="mt-1 text-xs font-medium text-slate-600">
+                            {formatted.secondary}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

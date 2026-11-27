@@ -147,15 +147,26 @@ export function BucketSortWidget({
           const isTrueCategory = category.id === currentItem.correctCategoryId;
 
           return (
-            <button
+            <motion.button
               key={category.id}
               type="button"
               disabled={hasClassified}
               onClick={() => handleSelectCategory(category.id)}
+              whileTap={hasClassified || shouldReduceMotion ? undefined : { y: 2 }}
+              animate={
+                hasClassified && isSelected && !isTrueCategory && !shouldReduceMotion
+                  ? { x: [0, -5, 5, -3, 3, 0] }
+                  : undefined
+              }
+              transition={
+                hasClassified && isSelected && !isTrueCategory
+                  ? { duration: 0.32 }
+                  : { type: "spring", stiffness: 520, damping: 32 }
+              }
               className={cn(
-                "flex min-h-[56px] w-full items-center justify-between gap-2 rounded-xl border-2 border-b-4 px-4 py-3 text-left text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
+                "flex min-h-[56px] w-full items-center justify-between gap-2 rounded-xl border-2 border-b-4 px-4 py-3 text-left text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
                 !hasClassified &&
-                  "cursor-pointer border-slate-200 border-b-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50/50 active:translate-y-px",
+                  "cursor-pointer border-slate-200 border-b-slate-300 bg-white text-slate-800 hover:border-sky-300 hover:bg-sky-50/50 active:border-b-2",
                 hasClassified &&
                   isTrueCategory &&
                   "border-emerald-500 border-b-emerald-600 bg-emerald-50 text-emerald-950",
@@ -183,7 +194,7 @@ export function BucketSortWidget({
                   aria-hidden="true"
                 />
               )}
-            </button>
+            </motion.button>
           );
         })}
       </div>

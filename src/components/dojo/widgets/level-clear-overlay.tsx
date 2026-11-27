@@ -34,13 +34,18 @@ interface LevelClearOverlayProps {
   onStartNextLevel: (nextId: DojoLevelId) => void;
 }
 
-const CELEBRATION_DOTS = [
-  { x: -72, y: -42, color: "bg-emerald-500" },
-  { x: 68, y: -46, color: "bg-amber-400" },
-  { x: -96, y: 12, color: "bg-sky-500" },
-  { x: 96, y: 18, color: "bg-emerald-400" },
-  { x: -44, y: -74, color: "bg-amber-500" },
-  { x: 46, y: -76, color: "bg-sky-400" },
+const CELEBRATION_PARTICLES = [
+  { x: -78, y: -44, rotate: -28, shape: "h-2.5 w-2.5 rounded-full", color: "bg-emerald-500" },
+  { x: 76, y: -48, rotate: 24, shape: "h-2.5 w-2.5 rounded-full", color: "bg-amber-400" },
+  { x: -102, y: 10, rotate: -40, shape: "h-2 w-4 rounded-xs", color: "bg-sky-500" },
+  { x: 102, y: 14, rotate: 38, shape: "h-2 w-4 rounded-xs", color: "bg-emerald-400" },
+  { x: -48, y: -82, rotate: 18, shape: "h-2.5 w-2.5 rotate-45 rounded-xs", color: "bg-amber-500" },
+  { x: 48, y: -84, rotate: -20, shape: "h-2.5 w-2.5 rotate-45 rounded-xs", color: "bg-sky-400" },
+  { x: -70, y: 58, rotate: 30, shape: "h-2 w-3.5 rounded-xs", color: "bg-amber-400" },
+  { x: 70, y: 56, rotate: -32, shape: "h-2 w-3.5 rounded-xs", color: "bg-sky-500" },
+  { x: 0, y: -96, rotate: 0, shape: "h-3 w-1.5 rounded-full", color: "bg-emerald-500" },
+  { x: -32, y: 74, rotate: -15, shape: "h-2 w-2 rounded-full", color: "bg-emerald-400" },
+  { x: 34, y: 72, rotate: 15, shape: "h-2 w-2 rounded-full", color: "bg-amber-500" },
 ];
 
 export function LevelClearOverlay({
@@ -106,26 +111,54 @@ export function LevelClearOverlay({
             ? { duration: 0 }
             : { type: "spring", stiffness: 280, damping: 24 }
         }
-        className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-white p-6 text-center shadow-xs"
+        className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-white p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-6px_rgba(5,150,105,0.12)]"
       >
-        <div className="relative mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-emerald-200 bg-emerald-50 text-emerald-700">
+        <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+          {/* Restrained radial geometric celebration burst */}
           {!shouldReduceMotion &&
-            CELEBRATION_DOTS.map((dot, idx) => (
+            CELEBRATION_PARTICLES.map((particle, idx) => (
               <motion.span
                 key={idx}
                 aria-hidden="true"
-                initial={{ x: 0, y: 0, scale: 0.4, opacity: 0.95 }}
-                animate={{ x: dot.x, y: dot.y, scale: 1, opacity: 0 }}
+                initial={{ x: 0, y: 0, scale: 0.35, rotate: 0, opacity: 0.95 }}
+                animate={{
+                  x: particle.x,
+                  y: particle.y,
+                  scale: 1,
+                  rotate: particle.rotate,
+                  opacity: 0,
+                }}
                 transition={{ duration: 0.85, ease: "easeOut" }}
-                className={cn("absolute h-2.5 w-2.5 rounded-full", dot.color)}
+                className={cn(
+                  "pointer-events-none absolute",
+                  particle.shape,
+                  particle.color
+                )}
               />
             ))}
 
-          {isFinalLevel ? (
-            <Crown className="h-8 w-8 text-amber-600" aria-hidden="true" />
-          ) : (
-            <Trophy className="h-8 w-8 text-emerald-600" aria-hidden="true" />
-          )}
+          {/* Trophy / Crown Emblem with single crisp spring entrance */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 320, damping: 18 }
+            }
+            className={cn(
+              "relative flex h-16 w-16 items-center justify-center rounded-2xl border-2 shadow-xs",
+              isFinalLevel
+                ? "border-amber-300 bg-slate-900 text-amber-300"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+            )}
+          >
+            {isFinalLevel ? (
+              <Crown className="h-8 w-8 text-amber-400" aria-hidden="true" />
+            ) : (
+              <Trophy className="h-8 w-8 text-emerald-600" aria-hidden="true" />
+            )}
+          </motion.div>
         </div>
 
         <div className="mt-4 space-y-1.5">
@@ -203,39 +236,44 @@ export function LevelClearOverlay({
         </div>
       </motion.div>
 
-      {/* Belt Rank-Up Banner */}
+      {/* Tactile Belt Rank-Up Banner (only when an actual rank-up occurred) */}
       {rankUpTo && (
         <motion.div
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={
+            shouldReduceMotion
+              ? { duration: 0 }
+              : { type: "spring", stiffness: 280, damping: 24, delay: 0.08 }
+          }
         >
           <Card
             className={cn(
-              "border-2",
+              "border-2 border-b-4",
               rankUpTo.belt === "Black Belt"
-                ? "border-amber-400 bg-slate-900 text-white"
-                : "border-amber-300 bg-amber-50/80 text-slate-900"
+                ? "border-amber-400 border-b-amber-600 bg-slate-900 text-white"
+                : "border-amber-300 border-b-amber-500 bg-amber-50/90 text-slate-900"
             )}
           >
             <CardContent className="flex items-center justify-between gap-3 p-4">
               <div className="min-w-0 space-y-1">
                 <div
                   className={cn(
-                    "text-[10px] font-extrabold uppercase tracking-wider",
+                    "inline-flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wider",
                     rankUpTo.belt === "Black Belt"
                       ? "text-amber-300"
                       : "text-amber-800"
                   )}
                 >
-                  Belt Rank-Up Achieved
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  <span>Belt Rank-Up Achieved</span>
                 </div>
-                <div className="text-sm font-bold sm:text-base">
+                <div className="text-sm font-extrabold tracking-tight sm:text-base">
                   {previousRank.belt} → {rankUpTo.belt}
                 </div>
                 <div
                   className={cn(
-                    "text-xs font-medium",
+                    "text-xs font-semibold",
                     rankUpTo.belt === "Black Belt"
                       ? "text-slate-200"
                       : "text-slate-700"
@@ -245,13 +283,25 @@ export function LevelClearOverlay({
                 </div>
               </div>
 
-              <span
-                className={cn(
-                  "h-4 w-9 shrink-0 rounded-sm",
-                  DOJO_BELT_STYLES[rankUpTo.belt].swatchClass
-                )}
-                aria-hidden="true"
-              />
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span
+                  className={cn(
+                    "h-5 w-11 rounded-sm shadow-2xs",
+                    DOJO_BELT_STYLES[rankUpTo.belt].swatchClass
+                  )}
+                  aria-hidden="true"
+                />
+                <span
+                  className={cn(
+                    "text-[10px] font-bold uppercase tracking-wider",
+                    rankUpTo.belt === "Black Belt"
+                      ? "text-amber-300"
+                      : "text-amber-800"
+                  )}
+                >
+                  {DOJO_BELT_STYLES[rankUpTo.belt].label}
+                </span>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -262,7 +312,9 @@ export function LevelClearOverlay({
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25 }}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { duration: 0.25, delay: 0.1 }
+          }
         >
           <Card className="border-emerald-200 bg-white">
             <CardContent className="flex items-start gap-3.5 p-4">

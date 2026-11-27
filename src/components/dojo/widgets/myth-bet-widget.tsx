@@ -128,17 +128,28 @@ export function MythBetWidget({
           const isTrueAnswer = index === wager.correctIndex;
 
           return (
-            <button
+            <motion.button
               key={`${index}-${option.slice(0, 24)}`}
               type="button"
               role="radio"
               aria-checked={isSelected}
               disabled={hasAnswered}
               onClick={() => handleSelectOption(index)}
+              whileTap={hasAnswered || shouldReduceMotion ? undefined : { y: 2 }}
+              animate={
+                hasAnswered && isSelected && !isTrueAnswer && !shouldReduceMotion
+                  ? { x: [0, -5, 5, -3, 3, 0] }
+                  : undefined
+              }
+              transition={
+                hasAnswered && isSelected && !isTrueAnswer
+                  ? { duration: 0.32 }
+                  : { type: "spring", stiffness: 520, damping: 32 }
+              }
               className={cn(
-                "flex w-full items-start gap-3 rounded-xl border-2 border-b-4 px-4 py-3.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
+                "flex w-full items-start gap-3 rounded-xl border-2 border-b-4 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
                 !hasAnswered &&
-                  "cursor-pointer border-slate-200 border-b-slate-300 bg-white hover:border-sky-300 hover:bg-sky-50/40 active:translate-y-px",
+                  "cursor-pointer border-slate-200 border-b-slate-300 bg-white hover:border-sky-300 hover:bg-sky-50/40 active:border-b-2",
                 hasAnswered &&
                   isTrueAnswer &&
                   "border-emerald-500 border-b-emerald-600 bg-emerald-50/90 text-emerald-950",
@@ -181,7 +192,7 @@ export function MythBetWidget({
               <span className="min-w-0 flex-1 text-sm font-medium leading-snug">
                 {option}
               </span>
-            </button>
+              </motion.button>
           );
         })}
       </div>

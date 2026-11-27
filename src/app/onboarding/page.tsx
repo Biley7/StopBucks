@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import type { CurrencyCode } from "@/domain/types";
 import { useRepository } from "@/repositories/repository-provider";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,7 +129,7 @@ export default function OnboardingPage() {
   const symbolPadClass = currConfig.symbol.length > 1 ? "pl-12" : "pl-8";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4 sm:p-6">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F4F6F8] p-4 sm:p-6">
       <div className="w-full max-w-xl">
         {hasExistingProfile && (
           <div className="mb-4">
@@ -142,8 +143,8 @@ export default function OnboardingPage() {
         )}
 
         <div className="mb-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-700 font-bold text-white shadow-xs">
-            SB
+          <div className="mb-3 flex justify-center">
+            <BrandMark size="lg" showWordmark={false} />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Configure Your Financial Baseline

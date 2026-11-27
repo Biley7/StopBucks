@@ -1,9 +1,24 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, CheckCircle2, Crown, Lock, Play, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Compass,
+  Crown,
+  Flame,
+  Layers,
+  Lock,
+  Play,
+  Shield,
+} from "lucide-react";
 import { DOJO_LEVELS, DOJO_WORLDS } from "@/domain/dojo-curriculum";
-import type { DojoLevelId, DojoProgress, DojoWorld } from "@/domain/dojo-types";
+import type {
+  DojoLevelId,
+  DojoProgress,
+  DojoWorld,
+  DojoWorldId,
+} from "@/domain/dojo-types";
 import {
   buildDojoSkillMapLayout,
   getActiveDojoLevel,
@@ -21,6 +36,31 @@ interface DojoSkillMapProps {
   onSelectLevel: (levelId: DojoLevelId) => void;
 }
 
+const WORLD_WATERMARK: Record<
+  DojoWorldId,
+  {
+    bgClass: string;
+    iconColorClass: string;
+    Icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  }
+> = {
+  "world-1": {
+    bgClass: "bg-amber-50/35",
+    iconColorClass: "text-amber-900/[0.045]",
+    Icon: Flame,
+  },
+  "world-2": {
+    bgClass: "bg-sky-50/35",
+    iconColorClass: "text-sky-900/[0.045]",
+    Icon: Layers,
+  },
+  "world-3": {
+    bgClass: "bg-emerald-50/35",
+    iconColorClass: "text-emerald-900/[0.045]",
+    Icon: Compass,
+  },
+};
+
 function WorldBanner({
   world,
   stat,
@@ -37,11 +77,11 @@ function WorldBanner({
   return (
     <div
       className={cn(
-        "rounded-2xl border px-4 py-3 shadow-xs",
+        "rounded-2xl border px-4 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_18px_-6px_rgba(15,23,42,0.07)]",
         worldStyle.bannerBorderClass,
         stat.isUnlocked
           ? worldStyle.bannerLeftAccentClass
-          : "border-slate-200 bg-slate-50"
+          : "border-slate-200 bg-slate-50/95"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -151,11 +191,33 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
   const firstWorldStat = firstWorld ? statMap.get(firstWorld.id) : undefined;
   const activeWorld = activeLevel ? worldMap.get(activeLevel.worldId) : null;
 
+  // Derive vertical tonal zones for the 3 worlds without altering node/connector layout
+  const w2BannerY =
+    layout.worldBanners.find((b) => b.worldId === "world-2")?.bannerCenterYPx ??
+    Math.round(layout.canvasHeightPx / 3);
+  const w3BannerY =
+    layout.worldBanners.find((b) => b.worldId === "world-3")?.bannerCenterYPx ??
+    Math.round((layout.canvasHeightPx * 2) / 3);
+
+  const worldZones: Array<{
+    worldId: DojoWorldId;
+    topPx: number;
+    heightPx: number;
+  }> = [
+    { worldId: "world-1", topPx: 0, heightPx: w2BannerY },
+    { worldId: "world-2", topPx: w2BannerY, heightPx: w3BannerY - w2BannerY },
+    {
+      worldId: "world-3",
+      topPx: w3BannerY,
+      heightPx: Math.max(0, layout.canvasHeightPx - w3BannerY),
+    },
+  ];
+
   return (
     <section aria-label="StopBucks Dojo 3-World Skill Map" className="space-y-4">
-      {/* Prominent Continue Next Drill CTA or All-Mastered State */}
+      {/* Mobile-only (< lg) Continue Next Drill CTA (Desktop uses Action Strip + Side Rail) */}
       {activeLevel ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-sky-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_6px_18px_-6px_rgba(15,23,42,0.06)] lg:hidden">
           <div className="min-w-0 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-sky-800">
@@ -193,7 +255,7 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-emerald-700">
               <Crown className="h-5 w-5" aria-hidden="true" />
@@ -222,11 +284,36 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
         <WorldBanner world={firstWorld} stat={firstWorldStat} />
       )}
 
-      {/* Responsive Winding S-Curve Map Track with subtle dotted-grid canvas */}
+      {/* Responsive Winding S-Curve Game-Board Canvas */}
       <div
         style={{ height: `${layout.canvasHeightPx}px` }}
-        className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px]"
+        className="relative w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-8px_rgba(15,23,42,0.07)]"
       >
+        {/* Subtle 3-World Tonal Atmosphere + Corner Emblem Watermarks (strictly z-0 behind board) */}
+        {worldZones.map((zone) => {
+          const theme = WORLD_WATERMARK[zone.worldId];
+          const WatermarkIcon = theme.Icon;
+          return (
+            <div
+              key={zone.worldId}
+              aria-hidden="true"
+              style={{ top: `${zone.topPx}px`, height: `${zone.heightPx}px` }}
+              className={cn(
+                "pointer-events-none absolute inset-x-0 z-0 overflow-hidden",
+                theme.bgClass
+              )}
+            >
+              <WatermarkIcon
+                aria-hidden={true}
+                className={cn(
+                  "absolute right-4 top-5 h-32 w-32 sm:right-8 sm:top-6 sm:h-40 sm:w-40",
+                  theme.iconColorClass
+                )}
+              />
+            </div>
+          );
+        })}
+
         {/* Decorative S-Curve SVG Connectors strictly behind world banners (z-10) and nodes/labels (z-20) */}
         <svg
           aria-hidden="true"
@@ -251,6 +338,7 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
                 d={connector.pathData}
                 fill="none"
                 vectorEffect="non-scaling-stroke"
+                className={isUpcoming ? "dojo-connector-active" : undefined}
                 stroke={
                   isCompleted ? "#059669" : isUpcoming ? "#0284c7" : "#cbd5e1"
                 }
@@ -283,7 +371,7 @@ export function DojoSkillMap({ progress, onSelectLevel }: DojoSkillMapProps) {
             );
           })}
 
-        {/* Nine Tactile Level Nodes */}
+        {/* Nine Tactile 3D Level Tokens */}
         {layout.nodes.map((nodePos) => {
           const level = levelMap.get(nodePos.levelId);
           if (!level) return null;

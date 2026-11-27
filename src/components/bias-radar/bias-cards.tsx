@@ -4,6 +4,7 @@ import React from "react";
 import { AlertOctagon, AlertTriangle, Calendar, CheckCircle2, CreditCard, Moon, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import type { BiasAnalysisResult, BiasMetric, UserProfile } from "@/domain/types";
 
@@ -93,18 +94,19 @@ export function BiasCards({ bias, profile }: BiasCardsProps) {
             <CardContent className="flex flex-1 flex-col justify-between space-y-2 text-xs text-slate-600">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className={`h-full rounded-full ${
-                        metric.level === "high"
-                          ? "bg-rose-500"
-                          : metric.level === "moderate"
-                            ? "bg-amber-500"
-                            : "bg-emerald-500"
-                      }`}
-                      style={{ width: `${Math.min(100, Math.max(0, metric.score))}%` }}
-                    />
-                  </div>
+                  <AnimatedProgressBar
+                    value={metric.score}
+                    ariaLabel={`${definition.title} score`}
+                    className="h-1.5"
+                    trackClassName="flex-1 bg-slate-100"
+                    barClassName={
+                      metric.level === "high"
+                        ? "bg-rose-500"
+                        : metric.level === "moderate"
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                    }
+                  />
                   <span className="w-12 shrink-0 text-right text-[11px] font-semibold tabular-nums text-slate-800">
                     {metric.score}/100
                   </span>

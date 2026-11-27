@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, Swords } from "lucide-react";
 import { useRepository } from "@/repositories/repository-provider";
 import { createClient } from "@/lib/supabase/client";
+import { BrandMark } from "@/components/shared/brand-mark";
 import { Button } from "@/components/ui/button";
 import { PainOfPayingToggle } from "./pain-of-paying-toggle";
 import { NAV_ITEMS } from "./app-sidebar";
@@ -42,12 +43,10 @@ export function AppTopbar() {
       <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
         <Link
           href="/runway"
-          aria-label="StopBucks — Go to Daily Runway"
-          className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 md:hidden"
+          title="StopBucks — Go to Daily Runway"
+          className="flex shrink-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 md:hidden"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-700 font-bold text-white text-xs shadow-2xs">
-            SB
-          </div>
+          <BrandMark size="sm" showWordmark={false} />
         </Link>
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-slate-900 sm:text-base">

@@ -198,6 +198,7 @@ export default function DojoPage() {
     <div className="space-y-5">
       <DojoHeader
         progress={progress}
+        onSelectLevel={handleSelectLevel}
         onOpenTrophyCase={() => setTrophyOpen(true)}
         onOpenResearchLibrary={() => setCitationTarget({ mode: "library" })}
         onToggleSound={handleToggleSound}

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { TRIGGER_LABELS } from "@/domain/runway-insights";
 import type { MonthEndSnapshot } from "@/domain/runway-insights";
@@ -38,15 +39,15 @@ export function MonthEndSnapshotCard({
   const consumptionPercent =
     snapshot.consumptionBudgetMinor > 0
       ? Math.round(
-          (snapshot.totalConsumptionMinor / snapshot.consumptionBudgetMinor) * 100
-        )
+        (snapshot.totalConsumptionMinor / snapshot.consumptionBudgetMinor) * 100
+      )
       : 0;
 
   const investPercent =
     profile.selfInvestTargetMinor > 0
       ? Math.round(
-          (snapshot.totalSelfInvestMinor / profile.selfInvestTargetMinor) * 100
-        )
+        (snapshot.totalSelfInvestMinor / profile.selfInvestTargetMinor) * 100
+      )
       : 0;
 
   const isInvestTargetReached =
@@ -130,17 +131,13 @@ export function MonthEndSnapshotCard({
               )}{" "}
               budget ({consumptionPercent}%)
             </p>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  snapshot.isDeficit ? "bg-rose-500" : "bg-sky-500"
-                )}
-                style={{
-                  width: `${Math.min(100, Math.max(0, consumptionPercent))}%`,
-                }}
-              />
-            </div>
+            <AnimatedProgressBar
+              value={consumptionPercent}
+              ariaLabel="Historical month consumption used"
+              className="mt-2 h-1.5"
+              trackClassName="bg-slate-200"
+              barClassName={snapshot.isDeficit ? "bg-rose-500" : "bg-sky-500"}
+            />
           </div>
 
           {/* Invest-in-Self tile */}
@@ -171,14 +168,13 @@ export function MonthEndSnapshotCard({
               )}{" "}
               target ({investPercent}%)
             </p>
-            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-emerald-100">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
-                style={{
-                  width: `${Math.min(100, Math.max(0, investPercent))}%`,
-                }}
-              />
-            </div>
+            <AnimatedProgressBar
+              value={investPercent}
+              ariaLabel="Historical month self-investment progress"
+              className="mt-2 h-1.5"
+              trackClassName="bg-emerald-100"
+              barClassName="bg-emerald-500"
+            />
           </div>
 
           {/* Growth-to-burn ratio tile */}

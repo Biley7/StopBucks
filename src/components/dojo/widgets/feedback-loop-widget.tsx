@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Activity, CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import type { FeedbackLoopMechanicStep } from "@/domain/dojo-types";
 import { playCorrect, playWrong } from "@/lib/sound-fx";
@@ -31,6 +32,8 @@ export function FeedbackLoopWidget({
   onRevealChange,
   onComplete,
 }: FeedbackLoopWidgetProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const shouldReduceMotion = Boolean(prefersReducedMotion);
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(
     null
@@ -201,17 +204,28 @@ export function FeedbackLoopWidget({
             const isOptimal = option.isOptimal;
 
             return (
-              <button
+              <motion.button
                 key={`${stepIndex}-${index}`}
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
                 disabled={hasSelected}
                 onClick={() => handleSelectOption(index)}
+                whileTap={hasSelected || shouldReduceMotion ? undefined : { y: 2 }}
+                animate={
+                  hasSelected && isSelected && !isOptimal && !shouldReduceMotion
+                    ? { x: [0, -5, 5, -3, 3, 0] }
+                    : undefined
+                }
+                transition={
+                  hasSelected && isSelected && !isOptimal
+                    ? { duration: 0.32 }
+                    : { type: "spring", stiffness: 520, damping: 32 }
+                }
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-xl border-2 border-b-4 px-4 py-3.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
+                  "flex w-full items-start gap-3 rounded-xl border-2 border-b-4 px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2",
                   !hasSelected &&
-                    "cursor-pointer border-slate-200 border-b-slate-300 bg-white hover:border-sky-300 hover:bg-sky-50/40 active:translate-y-px",
+                    "cursor-pointer border-slate-200 border-b-slate-300 bg-white hover:border-sky-300 hover:bg-sky-50/40 active:border-b-2",
                   hasSelected &&
                     isOptimal &&
                     "border-emerald-500 border-b-emerald-600 bg-emerald-50/90 text-emerald-950",
@@ -255,7 +269,7 @@ export function FeedbackLoopWidget({
                 <span className="min-w-0 flex-1 text-sm font-medium leading-snug">
                   {option.label}
                 </span>
-              </button>
+              </motion.button>
             );
           })}
         </div>

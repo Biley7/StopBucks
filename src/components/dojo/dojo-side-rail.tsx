@@ -21,6 +21,7 @@ import { getActiveDojoLevel } from "@/lib/dojo-map-layout";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import {
   DOJO_BELT_STYLES,
   DOJO_WORLD_STYLES,
@@ -106,7 +107,7 @@ export function DojoSideRail({
       className="min-w-0 space-y-3 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-10.5rem)] lg:overflow-y-auto lg:pr-0.5"
     >
       {/* Card 1: Belt & Rank Progress */}
-      <Card className="border-slate-200/90 bg-white shadow-xs">
+      <Card className="border-slate-200/90 bg-white">
         <CardContent className="space-y-2.5 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -178,19 +179,12 @@ export function DojoSideRail({
               </span>
             </div>
 
-            <div
-              role="progressbar"
-              aria-label="Rail belt rank progress"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={rank.progressPct}
-              className="h-2.5 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100"
-            >
-              <div
-                style={{ width: `${rank.progressPct}%` }}
-                className={cn("h-full rounded-full", beltStyle.progressBarClass)}
-              />
-            </div>
+            <AnimatedProgressBar
+              value={rank.progressPct}
+              ariaLabel="Rail belt rank progress"
+              trackClassName="h-2.5 border border-slate-200 bg-slate-100"
+              barClassName={beltStyle.progressBarClass}
+            />
           </div>
 
           {/* Current & Longest Streak */}
@@ -220,7 +214,7 @@ export function DojoSideRail({
       </Card>
 
       {/* Card 2: Next Up Spotlight */}
-      <Card className="border-slate-200/90 bg-white shadow-xs">
+      <Card className="border-slate-200/90 bg-white">
         <CardContent className="space-y-2.5 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -313,7 +307,7 @@ export function DojoSideRail({
       </Card>
 
       {/* Card 3: Badge Showcase Preview */}
-      <Card className="border-slate-200/90 bg-white shadow-xs">
+      <Card className="border-slate-200/90 bg-white">
         <CardContent className="space-y-3 p-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
@@ -337,12 +331,10 @@ export function DojoSideRail({
                 <div
                   key={level.badgeId}
                   role="listitem"
-                  aria-label={`${level.badgeName} (Level ${level.id}) — ${
-                    isUnlocked ? "Unlocked" : "Locked"
-                  }`}
-                  title={`${level.badgeName} (Level ${level.id}) — ${
-                    isUnlocked ? "Unlocked" : "Locked"
-                  }`}
+                  aria-label={`${level.badgeName} (Level ${level.id}) — ${isUnlocked ? "Unlocked" : "Locked"
+                    }`}
+                  title={`${level.badgeName} (Level ${level.id}) — ${isUnlocked ? "Unlocked" : "Locked"
+                    }`}
                   className={cn(
                     "relative flex flex-col items-center justify-center gap-1 rounded-xl border p-2 text-center transition-colors",
                     isUnlocked

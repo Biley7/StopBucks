@@ -5,6 +5,7 @@ import { CheckCircle2, FastForward, Hourglass, Loader2, ShoppingBag, Timer } fro
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AnimatedProgressBar } from "@/components/shared/motion-primitives";
 import { useDisplayPreference } from "@/lib/display-preference-context";
 import { TRIGGER_LABELS } from "@/domain/runway-insights";
 import type { UserProfile, VaultItem } from "@/domain/types";
@@ -59,8 +60,8 @@ export function CoolingItemCard({
     <Card
       className={
         isUnlocked
-          ? "rounded-xl border-emerald-300 bg-emerald-50/40"
-          : "rounded-xl border-amber-200 bg-amber-50/30"
+          ? "rounded-xl border-emerald-300 bg-emerald-50/40 shadow-[0_2px_6px_rgba(5,150,105,0.08)] transition-shadow duration-200 hover:shadow-[0_6px_18px_-4px_rgba(5,150,105,0.16)]"
+          : "rounded-xl border-amber-200 bg-amber-50/30 shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition-shadow duration-200 hover:shadow-[0_6px_16px_-6px_rgba(217,119,6,0.14)]"
       }
     >
       <CardContent className="space-y-3 p-4">
@@ -107,21 +108,12 @@ export function CoolingItemCard({
         </div>
 
         <div className="space-y-1.5">
-          <div
-            role="progressbar"
-            aria-label="48-hour cool-off progress"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progressPercent}
-            className="h-2 w-full overflow-hidden rounded-full bg-white/90 ring-1 ring-slate-200/70"
-          >
-            <div
-              className={`h-full rounded-full transition-all ${
-                isUnlocked ? "bg-emerald-500" : "bg-amber-500"
-              }`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
+          <AnimatedProgressBar
+            value={progressPercent}
+            ariaLabel="48-hour cool-off progress"
+            trackClassName="bg-white/90 ring-1 ring-slate-200/70"
+            barClassName={isUnlocked ? "bg-emerald-500" : "bg-amber-500"}
+          />
           <p className="flex items-center gap-1.5 text-xs font-medium text-slate-700 tabular-nums">
             <Timer className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>

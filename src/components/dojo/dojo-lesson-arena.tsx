@@ -596,10 +596,10 @@ export function DojoLessonArena({
         </div>
       </header>
 
-      {/* Main Scrollable Lesson Stage */}
+      {/* Main Scrollable Lesson Stage with subtle low-contrast dot backdrop */}
       <main
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 sm:px-6 sm:pt-8",
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden bg-slate-50 bg-[radial-gradient(#cbd5e1_0.85px,transparent_0.85px)] [background-size:22px_22px] px-4 pt-4 sm:px-6 sm:pt-8",
           feedbackState?.open
             ? "pb-12 sm:pb-12"
             : "pb-[max(3rem,calc(env(safe-area-inset-bottom)+2rem))] sm:pb-12"
@@ -636,140 +636,151 @@ export function DojoLessonArena({
             </div>
           )}
 
-          {/* Beat 1: Research Wager */}
-          {beat === "wager" && (
-            <MythBetWidget
-              wager={level.wager}
-              citation={level.citation}
-              muted={progress.soundMuted}
-              combo={combo}
-              onAnswer={handleScoredAnswer}
-              onRevealChange={setFeedbackState}
-              onComplete={() => {
-                setFeedbackState(null);
-                setBeat("mechanic");
-              }}
-            />
-          )}
-
-          {/* Beat 2: Interactive Concept Mechanic (strictly from level.mechanic.kind) */}
-          {beat === "mechanic" && (
-            <MechanicDispatcher
-              level={level}
-              profile={profile}
-              muted={progress.soundMuted}
-              combo={combo}
-              onAnswer={handleScoredAnswer}
-              onRevealChange={setFeedbackState}
-              onComplete={() => {
-                setFeedbackState(null);
-                setBeat("mirror");
-              }}
-            />
-          )}
-
-          {/* Beat 3: Live Personal Data Mirror */}
-          {beat === "mirror" && (
-            <PersonalMirrorCard
-              levelId={level.id}
-              profile={profile}
-              transactions={transactions}
-              fixedCommitments={fixedCommitments}
-              vaultItems={vaultItems}
-              referenceDate={referenceDate}
-              timeZone={timeZone}
-              isLoading={isMirrorLoading}
-              isError={isMirrorError}
-              onRetry={onRetryMirror}
-              muted={progress.soundMuted}
-              onContinue={() => setBeat("mastery")}
-            />
-          )}
-
-          {/* Beat 4: Applied Mastery Check */}
-          {beat === "mastery" && (
-            <MasteryCheckWidget
-              questions={level.masteryQuestions}
-              muted={progress.soundMuted}
-              combo={combo}
-              onAnswer={handleScoredAnswer}
-              onRevealChange={setFeedbackState}
-              onComplete={finalizeLesson}
-            />
-          )}
-
-          {/* Beat 5: Saving, Save Error Recovery, or Victory Celebration */}
-          {beat === "victory" && completion.status === "saving" && (
-            <Card className="border-slate-200 bg-white">
-              <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
-                <Loader2
-                  className="h-8 w-8 animate-spin text-sky-600"
-                  aria-hidden="true"
+          <motion.div
+            key={beat}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+            }
+          >
+              {/* Beat 1: Research Wager */}
+              {beat === "wager" && (
+                <MythBetWidget
+                  wager={level.wager}
+                  citation={level.citation}
+                  muted={progress.soundMuted}
+                  combo={combo}
+                  onAnswer={handleScoredAnswer}
+                  onRevealChange={setFeedbackState}
+                  onComplete={() => {
+                    setFeedbackState(null);
+                    setBeat("mechanic");
+                  }}
                 />
-                <h2 className="text-lg font-bold text-slate-900">
-                  Recording Mastery Progress...
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Updating your XP, streak, and badge ledger safely.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+              )}
 
-          {beat === "victory" && completion.status === "error" && (
-            <Card className="border-amber-300 bg-white">
-              <CardContent className="space-y-4 p-6">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                    <AlertCircle className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-base font-bold text-slate-900">
-                      Could not save your completion yet
+              {/* Beat 2: Interactive Concept Mechanic (strictly from level.mechanic.kind) */}
+              {beat === "mechanic" && (
+                <MechanicDispatcher
+                  level={level}
+                  profile={profile}
+                  muted={progress.soundMuted}
+                  combo={combo}
+                  onAnswer={handleScoredAnswer}
+                  onRevealChange={setFeedbackState}
+                  onComplete={() => {
+                    setFeedbackState(null);
+                    setBeat("mirror");
+                  }}
+                />
+              )}
+
+              {/* Beat 3: Live Personal Data Mirror */}
+              {beat === "mirror" && (
+                <PersonalMirrorCard
+                  levelId={level.id}
+                  profile={profile}
+                  transactions={transactions}
+                  fixedCommitments={fixedCommitments}
+                  vaultItems={vaultItems}
+                  referenceDate={referenceDate}
+                  timeZone={timeZone}
+                  isLoading={isMirrorLoading}
+                  isError={isMirrorError}
+                  onRetry={onRetryMirror}
+                  muted={progress.soundMuted}
+                  onContinue={() => setBeat("mastery")}
+                />
+              )}
+
+              {/* Beat 4: Applied Mastery Check */}
+              {beat === "mastery" && (
+                <MasteryCheckWidget
+                  questions={level.masteryQuestions}
+                  muted={progress.soundMuted}
+                  combo={combo}
+                  onAnswer={handleScoredAnswer}
+                  onRevealChange={setFeedbackState}
+                  onComplete={finalizeLesson}
+                />
+              )}
+
+              {/* Beat 5: Saving, Save Error Recovery, or Victory Celebration */}
+              {beat === "victory" && completion.status === "saving" && (
+                <Card className="border-slate-200 bg-white">
+                  <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+                    <Loader2
+                      className="h-8 w-8 animate-spin text-sky-600"
+                      aria-hidden="true"
+                    />
+                    <h2 className="text-lg font-bold text-slate-900">
+                      Recording Mastery Progress...
                     </h2>
-                    <p className="text-xs leading-relaxed text-slate-600">
-                      {completion.errorMessage}
+                    <p className="text-xs text-slate-500">
+                      Updating your XP, streak, and badge ledger safely.
                     </p>
-                    <p className="text-xs font-medium text-slate-700">
-                      Your {completion.result.accuracyPct}% attempt is ready to
-                      retry — retrying saves the exact same result without
-                      duplicating XP.
-                    </p>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+              )}
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onExitToMap}
-                    className="border-slate-300"
-                  >
-                    Back to Dojo Map
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => void persistProgress(completion.result.nextProgress)}
-                    className="gap-2 border-b-[3px] border-b-sky-800 bg-sky-600 font-bold text-white hover:bg-sky-500"
-                  >
-                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                    <span>Retry Save</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              {beat === "victory" && completion.status === "error" && (
+                <Card className="border-amber-300 bg-white">
+                  <CardContent className="space-y-4 p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                        <AlertCircle className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <div className="space-y-1">
+                        <h2 className="text-base font-bold text-slate-900">
+                          Could not save your completion yet
+                        </h2>
+                        <p className="text-xs leading-relaxed text-slate-600">
+                          {completion.errorMessage}
+                        </p>
+                        <p className="text-xs font-medium text-slate-700">
+                          Your {completion.result.accuracyPct}% attempt is ready to
+                          retry — retrying saves the exact same result without
+                          duplicating XP.
+                        </p>
+                      </div>
+                    </div>
 
-          {beat === "victory" && completion.status === "saved" && (
-            <LevelClearOverlay
-              level={level}
-              completionResult={completion.result}
-              previousRank={completion.previousRank}
-              nextLevel={nextLevel}
-              onBackToMap={onExitToMap}
-              onStartNextLevel={onStartNextLevel}
-            />
-          )}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onExitToMap}
+                        className="border-slate-300"
+                      >
+                        Back to Dojo Map
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => void persistProgress(completion.result.nextProgress)}
+                        className="gap-2 border-b-[3px] border-b-sky-800 bg-sky-600 font-bold text-white hover:bg-sky-500"
+                      >
+                        <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                        <span>Retry Save</span>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {beat === "victory" && completion.status === "saved" && (
+                <LevelClearOverlay
+                  level={level}
+                  completionResult={completion.result}
+                  previousRank={completion.previousRank}
+                  nextLevel={nextLevel}
+                  onBackToMap={onExitToMap}
+                  onStartNextLevel={onStartNextLevel}
+                />
+              )}
+          </motion.div>
 
           {/* Extra bottom clearance so choices and buttons scroll comfortably above docked feedback tray */}
           <div className="h-3 shrink-0" aria-hidden="true" />

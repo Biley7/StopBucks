@@ -83,15 +83,16 @@ export function DojoLevelNode({
   const { halfButtonPx, labelAnchor, labelOffsetPx } = position;
   const buttonSizeClass = level.isBoss ? "h-[74px] w-[74px]" : "h-16 w-16";
 
+  // Tactile 3D extruded game-token surfaces
   const buttonSurfaceClass = isCompleted
     ? level.isBoss
-      ? "bg-emerald-700 border-2 border-emerald-800 border-b-[5px] border-b-emerald-950 text-white hover:bg-emerald-600"
-      : "bg-emerald-600 border-2 border-emerald-700 border-b-[5px] border-b-emerald-800 text-white hover:bg-emerald-500"
+      ? "bg-emerald-700 border-2 border-emerald-800 text-white shadow-[0_6px_0_0_#047857] hover:bg-emerald-600 active:shadow-[0_2px_0_0_#047857]"
+      : "bg-emerald-600 border-2 border-emerald-700 text-white shadow-[0_6px_0_0_#047857] hover:bg-emerald-500 active:shadow-[0_2px_0_0_#047857]"
     : isActive
       ? level.isBoss
-        ? "bg-slate-900 border-2 border-amber-400/80 border-b-[5px] border-b-slate-950 text-amber-300 hover:bg-slate-800 ring-4 ring-amber-200/80"
-        : "bg-sky-600 border-2 border-sky-700 border-b-[5px] border-b-sky-800 text-white hover:bg-sky-500 ring-4 ring-sky-200"
-      : "bg-slate-100 border-2 border-slate-200 border-b-[5px] border-b-slate-300 text-slate-400 cursor-not-allowed";
+        ? "bg-slate-900 border-2 border-amber-400 text-amber-300 shadow-[0_6px_0_0_#b45309] hover:bg-slate-800 ring-4 ring-amber-200/80 active:shadow-[0_2px_0_0_#b45309]"
+        : "bg-sky-600 border-2 border-sky-700 text-white shadow-[0_6px_0_0_#0369a1] hover:bg-sky-500 ring-4 ring-sky-200/80 active:shadow-[0_2px_0_0_#0369a1]"
+      : "bg-slate-100 border-2 border-slate-200 text-slate-400 shadow-[0_4px_0_0_#cbd5e1] cursor-not-allowed";
 
   const labelPositionStyle: React.CSSProperties =
     labelAnchor === "below"
@@ -124,15 +125,19 @@ export function DojoLevelNode({
     >
       {/* Zero-size geometric anchor so circle center and all labels align cleanly to (xPct%, yPx) */}
       <div className="relative h-0 w-0">
-        {/* Top Tag Pills (NEXT DRILL / BOSS) */}
+        {/* Top Speech Tag Pills (NEXT DRILL / BOSS) */}
         {(isActive || bossLabel) && (
           <div
-            style={{ bottom: `${halfButtonPx + 10}px` }}
+            style={{ bottom: `${halfButtonPx + 12}px` }}
             className="pointer-events-none absolute left-0 z-20 flex -translate-x-1/2 flex-col items-center gap-1"
           >
             {isActive && (
-              <span className="whitespace-nowrap rounded-full border border-sky-200 bg-white px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-sky-700 uppercase shadow-xs">
+              <span className="relative whitespace-nowrap rounded-full border border-sky-200 bg-white px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider text-sky-700 uppercase shadow-xs">
                 NEXT DRILL
+                <span
+                  aria-hidden="true"
+                  className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-sky-200 bg-white"
+                />
               </span>
             )}
             {bossLabel && (
@@ -152,30 +157,24 @@ export function DojoLevelNode({
           </div>
         )}
 
-        {/* Active subtle animated ring (disabled under reduced motion) */}
-        {isActive && !shouldReduceMotion && (
-          <div className="pointer-events-none absolute left-0 top-0 z-10 -translate-x-1/2 -translate-y-1/2">
-            <motion.span
-              aria-hidden="true"
-              initial={{ scale: 0.96, opacity: 0.55 }}
-              animate={{ scale: 1.2, opacity: 0 }}
-              transition={{
-                duration: 1.8,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "easeOut",
-              }}
-              className={cn(
-                "block rounded-full border-2",
-                level.isBoss
-                  ? "h-[82px] w-[82px] border-amber-400/70"
-                  : "h-[72px] w-[72px] border-sky-400/70"
-              )}
-            />
-          </div>
-        )}
-
-        {/* Tactile Node Button centered directly on anchor point */}
-        <div className="absolute left-0 top-0 z-20 -translate-x-1/2 -translate-y-1/2">
+        {/* Tactile 3D Node Token centered directly on anchor point */}
+        <motion.div
+          animate={
+            isActive && !shouldReduceMotion
+              ? { y: [0, -5, 0] }
+              : undefined
+          }
+          transition={
+            isActive && !shouldReduceMotion
+              ? {
+                  duration: 3.2,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }
+              : undefined
+          }
+          className="absolute left-0 top-0 z-20 -translate-x-1/2 -translate-y-1/2"
+        >
           <motion.button
             type="button"
             disabled={isLocked}
@@ -187,7 +186,7 @@ export function DojoLevelNode({
               }
             }}
             whileHover={isLocked || shouldReduceMotion ? undefined : { y: -1 }}
-            whileTap={isLocked || shouldReduceMotion ? undefined : { y: 2 }}
+            whileTap={isLocked || shouldReduceMotion ? undefined : { y: 4 }}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
@@ -215,11 +214,11 @@ export function DojoLevelNode({
 
           {/* Accuracy pill on completed nodes when real accuracy data exists */}
           {hasValidAccuracy && (
-            <span className="pointer-events-none absolute -bottom-2 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800 shadow-xs">
+            <span className="pointer-events-none absolute -bottom-2.5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200 bg-white px-2 py-0.5 text-[10px] font-bold tabular-nums text-emerald-800 shadow-xs">
               {completionRecord.bestAccuracyPct}%
             </span>
           )}
-        </div>
+        </motion.div>
 
         {/* Opaque High-Contrast Level Label Card positioned from shared layout geometry */}
         <div
